@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin', 'tata_usaha', 'wali_kelas', 'siswa'],
+      enum: ['admin', 'kepala_sekolah', 'wali_kelas', 'tata_usaha', 'guru', 'siswa', 'orang_tua'],
       default: 'siswa',
     },
     nisn: {

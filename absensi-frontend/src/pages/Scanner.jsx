@@ -82,10 +82,13 @@ export default function Scanner() {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900">
       
       {/* Header Mobile Flat UI */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shrink-0">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-tight text-gray-900">Veltrik.</h1>
-          <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Scanner Absensi</p>
+      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-20 shrink-0">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
+          <div>
+            <h1 className="text-lg font-extrabold tracking-tight text-[#183057] leading-tight">SMK Widya Utama</h1>
+            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Scanner Presensi</p>
+          </div>
         </div>
         <button 
           onClick={() => navigate('/dashboard')}
@@ -112,8 +115,8 @@ export default function Scanner() {
           {/* Status: Sedang Memproses */}
           {isLoading && (
             <div className="text-center py-10 w-full border border-gray-200 rounded-md bg-gray-50">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-              <p className="text-sm font-semibold text-gray-600">Memvalidasi Koordinat GPS...</p>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#183057] mx-auto mb-4"></div>
+              <p className="text-sm font-semibold text-[#183057]">Memvalidasi Koordinat GPS...</p>
             </div>
           )}
 
@@ -124,7 +127,7 @@ export default function Scanner() {
               <p className="text-green-700 text-sm mb-6">{successMsg}</p>
               <button 
                 onClick={() => navigate('/dashboard')}
-                className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black transition"
+                className="w-full bg-[#183057] text-white py-2.5 rounded-md text-sm font-semibold hover:bg-[#112240] transition"
               >
                 Kembali ke Dashboard
               </button>

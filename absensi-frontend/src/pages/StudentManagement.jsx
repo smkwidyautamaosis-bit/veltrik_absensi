@@ -23,7 +23,7 @@ export default function StudentManagement() {
 
   const fetchStudents = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/students', {
+      const response = await axios.get('http://localhost:5000/api/users?role=siswa', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(response.data.data);
@@ -51,7 +51,7 @@ export default function StudentManagement() {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/students', formData, {
+      await axios.post('http://localhost:5000/api/users', { ...formData, role: 'siswa' }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Siswa berhasil ditambahkan.');
@@ -70,7 +70,7 @@ export default function StudentManagement() {
     if (!window.confirm('Hapus permanen data siswa ini?')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/students/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Siswa berhasil dihapus.');
@@ -105,7 +105,7 @@ export default function StudentManagement() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Data_Siswa_Veltrik.csv");
+    link.setAttribute("download", "Data_Siswa_SMK_Widya_Utama.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

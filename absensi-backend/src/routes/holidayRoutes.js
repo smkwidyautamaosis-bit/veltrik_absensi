@@ -1,13 +1,17 @@
 const express = require('express');
-const { createHoliday, getHolidays } = require('../controllers/holidayController');
+const { createHoliday, getHolidays, syncNationalHolidays, deleteHoliday } = require('../controllers/holidayController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.use(protect);
+router.route('/')
+  .post(protect, authorize('admin', 'tata_usaha'), createHoliday)
+  .get(protect, getHolidays);
 
-router.get('/', getHolidays);
-// Hanya admin/tata_usaha yang bisa set hari libur
-router.post('/', authorize('admin', 'tata_usaha'), createHoliday);
+router.route('/sync')
+  .post(protect, authorize('admin', 'tata_usaha'), syncNationalHolidays);
+
+router.route('/:id')
+  .delete(protect, authorize('admin', 'tata_usaha'), deleteHoliday);
 
 module.exports = router;

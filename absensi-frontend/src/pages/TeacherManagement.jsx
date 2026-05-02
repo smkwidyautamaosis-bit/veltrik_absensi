@@ -22,7 +22,7 @@ export default function TeacherManagement() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/teachers', {
+      const response = await axios.get('http://localhost:5000/api/users?role=guru', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTeachers(response.data.data);
@@ -50,7 +50,7 @@ export default function TeacherManagement() {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/teachers', formData, {
+      await axios.post('http://localhost:5000/api/users', { ...formData, role: 'guru' }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Data guru berhasil ditambahkan.');
@@ -69,7 +69,7 @@ export default function TeacherManagement() {
     if (!window.confirm('Hapus permanen data guru ini?')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/teachers/${id}`, {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Data guru berhasil dihapus.');
@@ -98,7 +98,7 @@ export default function TeacherManagement() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Data_Guru_Wali_Kelas_Veltrik.csv");
+    link.setAttribute("download", "Data_Guru_Wali_Kelas_SMK_Widya_Utama.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

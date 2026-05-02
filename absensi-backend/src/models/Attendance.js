@@ -17,7 +17,7 @@ const attendanceSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['hadir', 'terlambat', 'izin', 'sakit', 'alfa'],
+      enum: ['hadir', 'telat', 'izin', 'sakit', 'alfa'],
       default: 'hadir',
     },
     location: {

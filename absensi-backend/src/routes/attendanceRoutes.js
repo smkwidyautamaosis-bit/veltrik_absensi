@@ -1,5 +1,5 @@
 const express = require('express');
-const { checkIn, getHistory, getTodayAttendance } = require('../controllers/attendanceController');
+const { checkIn, getHistory, getTodayAttendance, getReport, updateAttendanceStatus, generateAlpa } = require('../controllers/attendanceController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 const { checkHoliday, checkTimeLimit } = require('../middlewares/attendanceMiddleware');
 
@@ -15,5 +15,14 @@ router.get('/history', authorize('siswa'), getHistory);
 
 // Admin / Guru melihat absensi hari ini untuk dashboard
 router.get('/today', authorize('admin', 'tata_usaha', 'wali_kelas'), getTodayAttendance);
+
+// Rute untuk Laporan
+router.get('/report', authorize('admin', 'tata_usaha'), getReport);
+
+// Update Status Absensi Manual
+router.put('/:id/status', authorize('admin', 'tata_usaha', 'wali_kelas'), updateAttendanceStatus);
+
+// Auto-Alpa Manual Trigger
+router.post('/generate-alpa', authorize('admin', 'tata_usaha'), generateAlpa);
 
 module.exports = router;

@@ -5,7 +5,12 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Scanner from './pages/Scanner';
 import StudentManagement from './pages/StudentManagement';
-import TeacherManagement from './pages/TeacherManagement'; // Import halaman guru
+import TeacherManagement from './pages/TeacherManagement';
+import ClassManagement from './pages/ClassManagement'; // Tambahan untuk Data Kelas
+import Settings from './pages/Settings'; // Tambahan untuk Pengaturan GPS Radius
+import Calendar from './pages/Calendar'; // Tambahan untuk Kalender Sekolah
+import Report from './pages/Report'; // Tambahan untuk Laporan PDF & Excel
+import ScheduleManagement from './pages/ScheduleManagement'; // Tambahan untuk Jadwal
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -52,12 +57,59 @@ function App() {
           } 
         />
 
-        {/* Rute Data Guru Baru */}
         <Route 
           path="/teachers" 
           element={
             <ProtectedRoute>
               <TeacherManagement />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Baru: Manajemen Kelas */}
+        <Route 
+          path="/classes" 
+          element={
+            <ProtectedRoute>
+              <ClassManagement />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Baru: Pengaturan */}
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Baru: Kalender */}
+        <Route 
+          path="/holidays" 
+          element={
+            <ProtectedRoute>
+              <Calendar />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Rute Baru: Laporan */}
+        <Route 
+          path="/reports" 
+          element={
+            <ProtectedRoute>
+              <Report />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/schedules" 
+          element={
+            <ProtectedRoute>
+              <ScheduleManagement />
             </ProtectedRoute>
           } 
         />

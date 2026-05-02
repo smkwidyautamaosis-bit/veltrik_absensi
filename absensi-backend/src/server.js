@@ -13,11 +13,14 @@ const errorHandler = require('./middlewares/errorMiddleware');
 // Import Routes
 const authRoutes = require('./routes/authRoutes');
 const classRoutes = require('./routes/classRoutes');
-const studentRoutes = require('./routes/studentRoutes');
 const attendanceRoutes = require('./routes/attendanceRoutes');
 const holidayRoutes = require('./routes/holidayRoutes');
 const qrRoutes = require('./routes/qrRoutes');
-const teacherRoutes = require('./routes/teacherRoutes'); // <-- TAMBAHAN: Import rute guru
+const permissionRoutes = require('./routes/permissionRoutes');
+const configRoutes = require('./routes/configRoutes');
+const scheduleRoutes = require('./routes/scheduleRoutes');
+const userRoutes = require('./routes/userRoutes');
+const initCronJobs = require('./utils/cron');
 
 // Inisialisasi Express
 const app = express();
@@ -34,11 +37,18 @@ const io = new Server(server, {
 // Middleware Global
 app.use(express.json());
 app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: false })); // Agar gambar uploads bisa diload frontend
 app.use(morgan('dev'));
+
+// Serve static folder untuk foto surat izin
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Koneksi ke Database
 connectDB();
+
+// Inisialisasi Cron Jobs (Auto-Alpa)
+initCronJobs();
 
 // Jadikan instance io bisa diakses global
 app.set('io', io);
@@ -53,11 +63,13 @@ io.on('connection', (socket) => {
 // Mendaftarkan Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/classes', classRoutes);
-app.use('/api/students', studentRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/holidays', holidayRoutes);
 app.use('/api/qr', qrRoutes);
-app.use('/api/teachers', teacherRoutes); // <-- TAMBAHAN: Daftarkan endpoint API guru
+app.use('/api/config', configRoutes);
+app.use('/api/schedules', scheduleRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/permissions', permissionRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Sistem Absensi Veltrik Berjalan Lancar');

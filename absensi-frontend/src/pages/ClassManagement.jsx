@@ -8,24 +8,34 @@ export default function ClassManagement() {
   const user = JSON.parse(localStorage.getItem('user'));
 
   const [classes, setClasses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Menyesuaikan state dengan model Class.js milik Anda (menggunakan 'name')
   const [formData, setFormData] = useState({
     name: '',
-    major: 'Rekayasa Perangkat Lunak'
+    major: '',
+    level: 'X',
+    academicYear: '2024/2025',
+    capacity: 36,
+    waliKelasId: ''
   });
 
-  const fetchClasses = async () => {
+  const fetchData = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/classes', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setClasses(response.data.data);
+      const [classRes, teacherRes] = await Promise.all([
+        axios.get('http://localhost:5000/api/classes', {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('http://localhost:5000/api/users?role=wali_kelas', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      setClasses(classRes.data.data);
+      setTeachers(teacherRes.data.data);
     } catch (err) {
-      console.error('Gagal mengambil data kelas', err);
+      console.error('Gagal mengambil data', err);
     }
   };
 
@@ -33,7 +43,7 @@ export default function ClassManagement() {
     if (user?.role !== 'admin' && user?.role !== 'tata_usaha') {
       navigate('/dashboard');
     } else {
-      fetchClasses();
+      fetchData();
     }
   }, [user?.role, navigate, token]);
 
@@ -48,12 +58,15 @@ export default function ClassManagement() {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/classes', formData, {
+      const payload = { ...formData };
+      if (!payload.waliKelasId) delete payload.waliKelasId;
+
+      await axios.post('http://localhost:5000/api/classes', payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Data kelas berhasil ditambahkan.');
-      setFormData({ name: '', major: 'Rekayasa Perangkat Lunak' });
-      fetchClasses(); 
+      setFormData({ name: '', major: '', level: 'X', academicYear: '2024/2025', capacity: 36, waliKelasId: '' });
+      fetchData(); 
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menambahkan data kelas.');
@@ -64,127 +77,130 @@ export default function ClassManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus permanen data kelas ini?')) return;
+    if (!window.confirm('Hapus permanen data kelas ini? Data siswa tidak akan terhapus, namun tidak akan memiliki kelas.')) return;
     
     try {
       await axios.delete(`http://localhost:5000/api/classes/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSuccess('Data kelas berhasil dihapus.');
-      fetchClasses();
+      fetchData();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menghapus data kelas.');
     }
   };
 
-  const handleExport = () => {
-    if (classes.length === 0) {
-      alert("Tidak ada data untuk diexport!");
-      return;
-    }
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Nama Kelas,Jurusan\n";
+  const handleArchive = async (id) => {
+    if (!window.confirm('Arsipkan kelas ini? Kelas yang diarsipkan tidak akan muncul di daftar aktif.')) return;
     
-    classes.forEach(row => {
-      // Menyesuaikan export dengan properti 'name'
-      const rowData = [`"${row.name}"`, `"${row.major}"`].join(",");
-      csvContent += rowData + "\r\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "Data_Kelas_Veltrik.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await axios.put(`http://localhost:5000/api/classes/${id}/archive`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setSuccess('Data kelas berhasil diarsipkan.');
+      fetchData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal mengarsipkan data kelas.');
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900 p-10">
-      <div className="max-w-5xl mx-auto space-y-8">
-        
+      <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex justify-between items-end pb-6 border-b border-gray-200">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Manajemen Data Kelas</h1>
-            <p className="text-gray-500 text-sm mt-1">Kelola daftar rombongan belajar SMK Widya Utama.</p>
+            <h1 className="text-2xl font-bold text-[#183057]">Manajemen Data Kelas</h1>
+            <p className="text-gray-500 text-sm mt-1">Kelola rombongan belajar dan jurusan secara dinamis.</p>
           </div>
-          <div className="flex gap-3">
-            <button onClick={handleExport} className="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
-              Export CSV
-            </button>
-            <button onClick={() => navigate('/dashboard')} className="px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-transparent rounded-md hover:bg-black transition">
-              Kembali
-            </button>
-          </div>
+          <button onClick={() => navigate('/dashboard')} className="px-4 py-2 text-sm font-semibold text-white bg-[#183057] border border-transparent hover:bg-[#112240] transition">
+            Kembali
+          </button>
         </div>
 
-        {error && <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-md text-sm font-medium">{error}</div>}
-        {success && <div className="bg-green-50 text-green-700 border border-green-200 p-4 rounded-md text-sm font-medium">{success}</div>}
+        {error && <div className="bg-red-50 text-red-700 border border-red-200 p-4 text-sm font-medium">{error}</div>}
+        {success && <div className="bg-green-50 text-green-700 border border-green-200 p-4 text-sm font-medium">{success}</div>}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          <div className="bg-white p-6 rounded-md border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider">Tambah Kelas Baru</h2>
+          <div className="bg-white p-6 border border-gray-200 lg:col-span-1 h-fit">
+            <h2 className="text-sm font-bold text-[#183057] mb-6 uppercase tracking-wider">Tambah Kelas Baru</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Kelas</label>
-                <input type="text" name="name" placeholder="Contoh: X RPL 1" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
+                <input type="text" name="name" placeholder="Contoh: Perhotelan 1" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jurusan</label>
-                <select name="major" value={formData.major} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="Rekayasa Perangkat Lunak">Rekayasa Perangkat Lunak</option>
-                  <option value="Teknik Komputer dan Jaringan">Teknik Komputer dan Jaringan</option>
-                  <option value="Akuntansi dan Keuangan Lembaga">Akuntansi dan Keuangan Lembaga</option>
-                  <option value="Bisnis Daring dan Pemasaran">Bisnis Daring dan Pemasaran</option>
+                <input type="text" name="major" placeholder="Contoh: Perhotelan" value={formData.major} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tingkat</label>
+                  <select name="level" value={formData.level} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition bg-white">
+                    <option value="X">X</option>
+                    <option value="XI">XI</option>
+                    <option value="XII">XII</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kapasitas</label>
+                  <input type="number" name="capacity" min="1" value={formData.capacity} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tahun Ajaran</label>
+                <input type="text" name="academicYear" placeholder="Contoh: 2024/2025" value={formData.academicYear} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Wali Kelas (Opsional)</label>
+                <select name="waliKelasId" value={formData.waliKelasId} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition bg-white">
+                  <option value="">-- Pilih Wali Kelas --</option>
+                  {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="pt-2">
-                <button type="submit" disabled={isLoading} className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black transition disabled:bg-gray-400">
+                <button type="submit" disabled={isLoading} className="w-full bg-[#183057] text-white py-2.5 text-sm font-semibold hover:bg-[#112240] transition disabled:bg-gray-400">
                   {isLoading ? 'Menyimpan...' : 'Simpan Data'}
                 </button>
               </div>
             </form>
           </div>
 
-          <div className="bg-white rounded-md border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Direktori Kelas</h2>
-              <span className="text-xs text-gray-500 font-medium">{classes.length} Total Data</span>
+          <div className="bg-white border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 bg-white">
+              <h2 className="text-sm font-bold text-[#183057] uppercase tracking-wider">Direktori Kelas Aktif</h2>
             </div>
-            
-            <div className="overflow-x-auto flex-1">
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Kelas</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Jurusan</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kelas</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tingkat/Jurusan</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Wali Kelas</th>
                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {classes.length > 0 ? (
-                    classes.map((cls) => (
-                      <tr key={cls._id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">{cls.name}</td>
-                        <td className="px-6 py-4 text-gray-500">{cls.major}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button onClick={() => handleDelete(cls._id)} className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider transition">
-                            Hapus
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr><td colSpan="3" className="px-6 py-12 text-center text-sm text-gray-500">Belum ada data kelas terdaftar.</td></tr>
-                  )}
+                  {classes.length === 0 ? (
+                    <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500">Belum ada kelas aktif.</td></tr>
+                  ) : classes.map((cls) => (
+                    <tr key={cls._id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-gray-900 whitespace-nowrap">{cls.name}</td>
+                      <td className="px-6 py-4 text-gray-500">{cls.level} - {cls.major}</td>
+                      <td className="px-6 py-4 text-gray-500">{cls.academicYear || '-'}</td>
+                      <td className="px-6 py-4 text-gray-500">{cls.waliKelasId ? cls.waliKelasId.name : '-'}</td>
+                      <td className="px-6 py-4 text-right space-x-3 whitespace-nowrap">
+                        <button onClick={() => handleArchive(cls._id)} className="text-yellow-600 hover:text-yellow-800 text-xs font-bold uppercase tracking-wider">Arsip</button>
+                        <button onClick={() => handleDelete(cls._id)} className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider">Hapus</button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </div>
-
         </div>
       </div>
     </div>
