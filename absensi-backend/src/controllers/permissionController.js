@@ -1,5 +1,9 @@
 const Permission = require('../models/Permission');
 const Attendance = require('../models/Attendance');
+const User = require('../models/User');
+const { sendNotification } = require('../utils/notificationService');
+const supabase = require('../utils/supabase');
+const path = require('path');
 
 // @desc    Submit Pengajuan Izin/Sakit (Siswa)
 // @route   POST /api/permissions
@@ -11,14 +15,63 @@ exports.submitPermission = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Harap sertakan file bukti (Surat Dokter/Orang Tua)' });
     }
 
+    // 1. Ambil data siswa untuk penamaan file
+    const student = await User.findById(req.user.id);
+    if (!student) return res.status(404).json({ success: false, message: 'Data siswa tidak ditemukan' });
+
+    // 2. Siapkan penamaan file & folder
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(7);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const fileName = `izin_${student.nisn}_${timestamp}_${randomStr}${ext}`;
+    const currentYear = new Date().getFullYear();
+    const filePath = `${currentYear}/${fileName}`;
+
+    // 3. Upload ke Supabase Storage
+    const { data, error: uploadError } = await supabase.storage
+      .from('permission-attachments')
+      .upload(filePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Supabase Upload Error:', uploadError);
+      return res.status(500).json({ 
+        success: false, 
+        message: `Gagal upload file ke Supabase Storage: ${uploadError.message || 'Unknown Error'}`,
+        error: uploadError
+      });
+    }
+
+    // 4. Dapatkan Public URL
+    const { data: { publicUrl } } = supabase.storage
+      .from('permission-attachments')
+      .getPublicUrl(filePath);
+
+    // 5. Simpan ke MongoDB
     const permission = await Permission.create({
       student: req.user.id,
       startDate,
       endDate,
       type,
       reason,
-      attachmentUrl: `/uploads/${req.file.filename}`
+      attachmentUrl: publicUrl
     });
+
+    // Cari Wali Kelas dari siswa ini
+    if (student && student.classId) {
+      const waliKelas = await User.findOne({ role: 'wali_kelas', classId: student.classId });
+      if (waliKelas) {
+        sendNotification({
+          recipient: waliKelas._id,
+          title: 'Pengajuan Izin Baru',
+          message: `${student.name} mengajukan ${type} dari tanggal ${startDate} s/d ${endDate}.`,
+          type: 'info',
+          link: '/dashboard'
+        });
+      }
+    }
 
     res.status(201).json({ success: true, message: 'Pengajuan izin berhasil dikirim', data: permission });
   } catch (error) {
@@ -114,6 +167,28 @@ exports.updatePermissionStatus = async (req, res, next) => {
           });
         }
       }
+    }
+
+    // Kirim notifikasi ke Siswa
+    const statusText = status === 'approved' ? 'Disetujui' : 'Ditolak';
+    sendNotification({
+      recipient: permission.student,
+      title: `Izin ${statusText}`,
+      message: `Pengajuan ${permission.type} Anda telah ${statusText.toLowerCase()} oleh Wali Kelas.`,
+      type: status === 'approved' ? 'success' : 'error',
+      link: '/dashboard'
+    });
+
+    // Notifikasi ke Orang Tua
+    const studentObj = await User.findById(permission.student);
+    if (studentObj && studentObj.parentId) {
+      sendNotification({
+        recipient: studentObj.parentId,
+        title: `Izin Anak ${statusText}`,
+        message: `Pengajuan ${permission.type} anak Anda telah ${statusText.toLowerCase()}.`,
+        type: status === 'approved' ? 'success' : 'error',
+        link: '/dashboard'
+      });
     }
 
     res.status(200).json({ success: true, message: `Pengajuan berhasil di-${status}`, data: permission });

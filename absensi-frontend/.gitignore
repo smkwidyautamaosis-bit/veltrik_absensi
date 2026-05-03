@@ -17,5 +17,7 @@ lerna-debug.log*
 # OS files
 .DS_Store
 
-# Local env (optional, hapus baris ini kalau mau push .env juga)
+# Local env
+.env
+.env.production
 *.local

@@ -39,9 +39,9 @@ export default function ScheduleManagement() {
     setLoading(true);
     try {
       const [scheduleRes, classRes, teacherRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/schedules', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/classes', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('http://localhost:5000/api/users?role=guru', { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${import.meta.env.VITE_API_URL}/api/schedules`, { headers: { Authorization: `Bearer ${token}`} }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, { headers: { Authorization: `Bearer ${token}`} }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=guru`, { headers: { Authorization: `Bearer ${token}`} })
       ]);
       setSchedules(scheduleRes.data.data);
       setClasses(classRes.data.data);
@@ -61,13 +61,13 @@ export default function ScheduleManagement() {
     e.preventDefault();
     try {
       if (isEditing) {
-        await axios.put(`http://localhost:5000/api/schedules/${formData.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/schedules/${formData.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         alert('Jadwal berhasil diupdate');
       } else {
-        await axios.post('http://localhost:5000/api/schedules', formData, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/schedules`, formData, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         alert('Jadwal berhasil ditambahkan');
       }
@@ -95,8 +95,8 @@ export default function ScheduleManagement() {
   const handleDelete = async (id) => {
     if (window.confirm('Yakin ingin menghapus jadwal ini?')) {
       try {
-        await axios.delete(`http://localhost:5000/api/schedules/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
+        await axios.delete(`${import.meta.env.VITE_API_URL}/api/schedules/${id}`, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         alert('Jadwal berhasil dihapus');
         fetchData();
@@ -305,7 +305,7 @@ export default function ScheduleManagement() {
                           <div className="text-xs text-gray-500">{sched.startTime} - {sched.endTime}</div>
                         </td>
                         <td className="px-5 py-3">
-                          {sched.classId ? `${sched.classId.name} ${sched.classId.major}` : <span className="text-red-500 text-xs">Deleted</span>}
+                          {sched.classId ? `${sched.classId.name} ${sched.classId.major}`: <span className="text-red-500 text-xs">Deleted</span>}
                         </td>
                         <td className="px-5 py-3 font-semibold text-gray-900">{sched.subject}</td>
                         <td className="px-5 py-3 text-xs">{sched.teacher?.name || '-'}</td>

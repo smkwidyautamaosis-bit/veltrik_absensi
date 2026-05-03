@@ -17,13 +17,13 @@ export default function SiswaDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resHistory = await axios.get('http://localhost:5000/api/attendance/history', {
-          headers: { Authorization: `Bearer ${token}` }
+        const resHistory = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/history`, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         setStudentHistory(resHistory.data.data);
 
-        const resPerm = await axios.get('http://localhost:5000/api/permissions/me', {
-          headers: { Authorization: `Bearer ${token}` }
+        const resPerm = await axios.get(`${import.meta.env.VITE_API_URL}/api/permissions/me`, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         setPermissions(resPerm.data.data);
       } catch (err) {
@@ -46,7 +46,7 @@ export default function SiswaDashboard() {
     data.append('attachment', file);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/permissions', data, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/permissions`, data, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'

@@ -55,12 +55,12 @@ export default function Scanner() {
 
         // 3. Kirim data QR dan Lokasi ke Backend
         try {
-          const response = await axios.post('http://localhost:5000/api/attendance/checkin', {
+          const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/attendance/checkin`, {
             qrToken: qrToken,
             lat: latitude,
             lng: longitude
           }, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}`}
           });
 
           setSuccessMsg(response.data.message);

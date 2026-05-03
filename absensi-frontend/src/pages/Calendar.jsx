@@ -28,8 +28,8 @@ export default function Calendar() {
   const fetchHolidays = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/holidays', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/holidays`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setHolidays(response.data.data);
     } catch (err) {
@@ -44,8 +44,8 @@ export default function Calendar() {
     setMessage('');
     setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/holidays/sync', {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/holidays/sync`, {}, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setMessage(response.data.message);
       fetchHolidays();
@@ -62,8 +62,8 @@ export default function Calendar() {
     setMessage('');
     setError('');
     try {
-      await axios.post('http://localhost:5000/api/holidays', { date: newDate, description: newDesc }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/holidays`, { date: newDate, description: newDesc }, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setNewDate('');
       setNewDesc('');
@@ -77,8 +77,8 @@ export default function Calendar() {
   const handleDelete = async (id) => {
     if (!window.confirm('Anda yakin ingin menghapus hari libur ini?')) return;
     try {
-      await axios.delete(`http://localhost:5000/api/holidays/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/holidays/${id}`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       fetchHolidays();
     } catch (err) {

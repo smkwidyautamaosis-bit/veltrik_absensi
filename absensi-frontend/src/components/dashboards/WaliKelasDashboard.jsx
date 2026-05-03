@@ -11,13 +11,13 @@ export default function WaliKelasDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resAtt = await axios.get('http://localhost:5000/api/attendance/today', {
-          headers: { Authorization: `Bearer ${token}` }
+        const resAtt = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/today`, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         setAttendances(resAtt.data.data);
 
-        const resPerm = await axios.get('http://localhost:5000/api/permissions/class', {
-          headers: { Authorization: `Bearer ${token}` }
+        const resPerm = await axios.get(`${import.meta.env.VITE_API_URL}/api/permissions/class`, {
+          headers: { Authorization: `Bearer ${token}`}
         });
         setPermissions(resPerm.data.data);
       } catch (err) {
@@ -26,7 +26,7 @@ export default function WaliKelasDashboard() {
     };
     fetchData();
 
-    const socket = io('http://localhost:5000');
+    const socket = io(`${import.meta.env.VITE_API_URL}`);
     socket.on('new-attendance', (newRecord) => {
       setAttendances((prev) => [newRecord, ...prev]);
     });
@@ -35,8 +35,8 @@ export default function WaliKelasDashboard() {
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/attendance/${id}/status`, { status: newStatus }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/attendance/${id}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}`}
       });
     } catch (err) {
       console.error('Gagal update status', err);
@@ -47,8 +47,8 @@ export default function WaliKelasDashboard() {
   const handlePermissionStatus = async (id, newStatus) => {
     if (!window.confirm(`Yakin ingin men-${newStatus} pengajuan ini?`)) return;
     try {
-      await axios.put(`http://localhost:5000/api/permissions/${id}/status`, { status: newStatus }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/permissions/${id}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       // Update state locally
       setPermissions(permissions.map(p => p._id === id ? { ...p, status: newStatus } : p));
@@ -163,7 +163,12 @@ export default function WaliKelasDashboard() {
                         <span className="text-gray-400">"{p.reason}"</span>
                       </td>
                       <td className="px-6 py-4">
-                        <a href={`http://localhost:5000${p.attachmentUrl}`} target="_blank" rel="noreferrer" className="text-xs font-bold text-[#183057] hover:underline flex items-center gap-1">
+                        <a 
+                          href={p.attachmentUrl.startsWith('http') ? p.attachmentUrl : `${import.meta.env.VITE_API_URL}${p.attachmentUrl}`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-xs font-bold text-[#183057] hover:underline flex items-center gap-1"
+                        >
                           Lihat File
                         </a>
                       </td>

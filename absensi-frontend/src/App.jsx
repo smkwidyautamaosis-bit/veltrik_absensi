@@ -11,6 +11,8 @@ import Settings from './pages/Settings'; // Tambahan untuk Pengaturan GPS Radius
 import Calendar from './pages/Calendar'; // Tambahan untuk Kalender Sekolah
 import Report from './pages/Report'; // Tambahan untuk Laporan PDF & Excel
 import ScheduleManagement from './pages/ScheduleManagement'; // Tambahan untuk Jadwal
+import ParentManagement from './pages/ParentManagement'; // Tambahan untuk Orang Tua
+import AcademicYearManagement from './pages/AcademicYearManagement';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -110,6 +112,22 @@ function App() {
           element={
             <ProtectedRoute>
               <ScheduleManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/parents" 
+          element={
+            <ProtectedRoute>
+              <ParentManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/academic-years" 
+          element={
+            <ProtectedRoute>
+              <AcademicYearManagement />
             </ProtectedRoute>
           } 
         />

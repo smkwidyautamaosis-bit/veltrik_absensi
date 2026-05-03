@@ -15,6 +15,7 @@ export default function TeacherManagement() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    password: 'Masuk123',
     nip: '',
     phoneNumber: '',
     gender: 'Laki-laki'
@@ -22,8 +23,8 @@ export default function TeacherManagement() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/users?role=guru', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=wali_kelas`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setTeachers(response.data.data);
     } catch (err) {
@@ -50,11 +51,11 @@ export default function TeacherManagement() {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:5000/api/users', { ...formData, role: 'guru' }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, { ...formData, role: 'wali_kelas' }, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setSuccess('Data guru berhasil ditambahkan.');
-      setFormData({ name: '', email: '', nip: '', phoneNumber: '', gender: 'Laki-laki' });
+      setFormData({ name: '', email: '', password: 'Masuk123', nip: '', phoneNumber: '', gender: 'Laki-laki' });
       fetchTeachers(); 
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -69,8 +70,8 @@ export default function TeacherManagement() {
     if (!window.confirm('Hapus permanen data guru ini?')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setSuccess('Data guru berhasil dihapus.');
       fetchTeachers();
@@ -155,6 +156,10 @@ export default function TeacherManagement() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">No. HP</label>
                 <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Password Login (Default: Masuk123)</label>
+                <input type="text" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jenis Kelamin</label>

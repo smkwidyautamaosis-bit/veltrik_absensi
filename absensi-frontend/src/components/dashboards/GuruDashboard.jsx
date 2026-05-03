@@ -25,8 +25,8 @@ export default function GuruDashboard() {
     setLoading(true);
     try {
       // Hanya ambil jadwal untuk guru ini dan pada hari ini
-      const response = await axios.get(`http://localhost:5000/api/schedules?teacher=${user._id}&dayOfWeek=${todayStr}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules?teacher=${user._id}&dayOfWeek=${todayStr}`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setSchedules(response.data.data);
     } catch (err) {
@@ -76,7 +76,7 @@ export default function GuruDashboard() {
                     </div>
                     <h4 className="text-lg font-bold text-gray-900 mb-1">{sched.subject}</h4>
                     <p className="text-sm text-gray-600 mb-4 font-medium">
-                      Kelas: {sched.classId ? `${sched.classId.name} ${sched.classId.major}` : <span className="text-red-500">Deleted</span>}
+                      Kelas: {sched.classId ? `${sched.classId.name} ${sched.classId.major}`: <span className="text-red-500">Deleted</span>}
                     </p>
                   </div>
                   

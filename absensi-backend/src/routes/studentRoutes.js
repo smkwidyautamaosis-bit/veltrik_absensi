@@ -1,19 +1,16 @@
 const express = require('express');
-const { getStudents, createStudent, updateStudent, deleteStudent } = require('../controllers/studentController');
+const multer = require('multer');
+const { getTemplate, previewImport, confirmImport, getStudents } = require('../controllers/studentController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-// Semua rute siswa butuh login dan akses khusus Admin / Tata Usaha
 router.use(protect);
-router.use(authorize('admin', 'tata_usaha'));
 
-router.route('/')
-  .get(getStudents)
-  .post(createStudent);
-
-router.route('/:id')
-  .put(updateStudent)
-  .delete(deleteStudent);
+router.get('/', authorize('admin', 'tata_usaha', 'wali_kelas'), getStudents);
+router.get('/template', authorize('admin', 'tata_usaha'), getTemplate);
+router.post('/import', authorize('admin', 'tata_usaha'), upload.single('file'), previewImport);
+router.post('/import/confirm', authorize('admin', 'tata_usaha'), confirmImport);
 
 module.exports = router;

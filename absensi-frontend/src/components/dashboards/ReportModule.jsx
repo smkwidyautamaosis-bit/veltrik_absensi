@@ -20,8 +20,8 @@ export default function ReportModule() {
   useEffect(() => {
     // Jika bukan wali kelas, ambil daftar semua kelas untuk filter
     if (!isWaliKelas) {
-      axios.get('http://localhost:5000/api/classes', {
-        headers: { Authorization: `Bearer ${token}` }
+      axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, {
+        headers: { Authorization: `Bearer ${token}`}
       })
       .then(res => setClasses(res.data.data))
       .catch(err => console.error('Error fetching classes', err));
@@ -36,13 +36,13 @@ export default function ReportModule() {
 
     setIsLoading(true);
     try {
-      let url = `http://localhost:5000/api/attendance/report?startDate=${startDate}&endDate=${endDate}`;
+      let url = `${import.meta.env.VITE_API_URL}/api/attendance/report?startDate=${startDate}&endDate=${endDate}`;
       if (selectedClass) {
         url += `&classId=${selectedClass}`;
       }
 
       const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}`}
       });
       setReportData(res.data.data);
     } catch (err) {

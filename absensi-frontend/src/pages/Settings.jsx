@@ -32,8 +32,8 @@ export default function Settings() {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.get('http://localhost:5000/api/config', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/config`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       
       if (response.data.success) {
@@ -63,8 +63,8 @@ export default function Settings() {
     setError('');
 
     try {
-      const response = await axios.put('http://localhost:5000/api/config', config, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.put(`${import.meta.env.VITE_API_URL}/api/config`, config, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setMessage(response.data.message);
     } catch (err) {

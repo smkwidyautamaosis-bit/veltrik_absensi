@@ -56,6 +56,13 @@ exports.createClass = async (req, res, next) => {
     }
 
     const newClass = await Class.create({ name, major, level, academicYear, capacity, waliKelasId });
+
+    // UPDATE: Set classId di model User untuk Wali Kelas tersebut
+    if (waliKelasId) {
+      const User = require('../models/User');
+      await User.findByIdAndUpdate(waliKelasId, { classId: newClass._id });
+    }
+
     res.status(201).json({ success: true, message: 'Kelas berhasil dibuat', data: newClass });
   } catch (error) {
     next(error);
@@ -91,6 +98,19 @@ exports.updateClass = async (req, res, next) => {
       new: true,
       runValidators: true,
     });
+
+    // UPDATE: Sinkronisasi classId di model User
+    const User = require('../models/User');
+    
+    // 1. Jika Wali Kelas berubah, hapus classId dari wali kelas lama
+    if (targetClass.waliKelasId && String(targetClass.waliKelasId) !== String(waliKelasId)) {
+      await User.findByIdAndUpdate(targetClass.waliKelasId, { $unset: { classId: 1 } });
+    }
+
+    // 2. Set classId ke wali kelas baru
+    if (waliKelasId) {
+      await User.findByIdAndUpdate(waliKelasId, { classId: updatedClass._id });
+    }
     
     res.status(200).json({ success: true, message: 'Kelas berhasil diupdate', data: updatedClass });
   } catch (error) {

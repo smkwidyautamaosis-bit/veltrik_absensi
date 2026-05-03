@@ -7,6 +7,7 @@ import KepalaSekolahDashboard from '../components/dashboards/KepalaSekolahDashbo
 import WaliKelasDashboard from '../components/dashboards/WaliKelasDashboard';
 import GuruDashboard from '../components/dashboards/GuruDashboard';
 import OrangTuaDashboard from '../components/dashboards/OrangTuaDashboard';
+import NotificationBell from '../components/NotificationBell';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -61,12 +62,15 @@ export default function Dashboard() {
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">{user?.role?.replace('_', ' ')}</p>
           </div>
         </div>
-        <button 
-          onClick={handleLogout}
-          className="text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200 transition"
-        >
-          Keluar
-        </button>
+        <div className="flex items-center gap-3">
+          <NotificationBell />
+          <button 
+            onClick={handleLogout}
+            className="text-xs font-bold text-gray-600 bg-gray-100 px-4 py-2 rounded-md hover:bg-gray-200 transition"
+          >
+            Keluar
+          </button>
+        </div>
       </header>
 
       {/* SIDEBAR (Hanya tampil di Layar Besar / PC) */}
@@ -91,6 +95,8 @@ export default function Dashboard() {
               <button onClick={() => navigate('/students')} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Data Siswa</button>
               <button onClick={() => navigate('/teachers')} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Data Guru</button>
               <button onClick={() => navigate('/classes')} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Data Kelas</button>
+              <button onClick={() => navigate('/academic-years')} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Tahun Ajaran</button>
+              <button onClick={() => navigate('/parents')} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Data Orang Tua</button>
               <button onClick={handlePrintQR} className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition">Cetak QR Gerbang</button>
 
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Laporan</div>
@@ -146,6 +152,9 @@ export default function Dashboard() {
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 capitalize">Beranda {user?.role?.replace('_', ' ')}</h2>
               <p className="text-gray-500 text-xs md:text-sm mt-1">Sistem Informasi Kehadiran Terpadu SMK Widya Utama</p>
+            </div>
+            <div className="hidden md:block">
+              <NotificationBell />
             </div>
           </div>
           

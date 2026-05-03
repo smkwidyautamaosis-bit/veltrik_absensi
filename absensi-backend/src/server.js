@@ -20,7 +20,12 @@ const permissionRoutes = require('./routes/permissionRoutes');
 const configRoutes = require('./routes/configRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const userRoutes = require('./routes/userRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const parentRoutes = require('./routes/parentRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const academicYearRoutes = require('./routes/academicYearRoutes');
 const initCronJobs = require('./utils/cron');
+const notificationService = require('./utils/notificationService');
 
 // Inisialisasi Express
 const app = express();
@@ -29,14 +34,18 @@ const server = http.createServer(app);
 // Inisialisasi Socket.io
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST']
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 });
 
 // Middleware Global
 app.use(express.json());
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
+app.use(cors({ 
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  credentials: true 
+}));
 app.use(helmet({ crossOriginResourcePolicy: false })); // Agar gambar uploads bisa diload frontend
 app.use(morgan('dev'));
 
@@ -52,9 +61,16 @@ initCronJobs();
 
 // Jadikan instance io bisa diakses global
 app.set('io', io);
+notificationService.setSocketIo(io);
 
 io.on('connection', (socket) => {
   console.log(`Client terhubung ke dashboard realtime: ${socket.id}`);
+  
+  socket.on('join-room', (userId) => {
+    socket.join(userId);
+    console.log(`User ${userId} joined room ${userId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log(`Client terputus: ${socket.id}`);
   });
@@ -70,6 +86,10 @@ app.use('/api/config', configRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/parents', parentRoutes);
+app.use('/api/students', studentRoutes);
+app.use('/api/academic-years', academicYearRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Sistem Absensi Veltrik Berjalan Lancar');

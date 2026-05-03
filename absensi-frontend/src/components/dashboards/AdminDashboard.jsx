@@ -13,15 +13,15 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const qrRes = await axios.get('http://localhost:5000/api/qr/generate', { headers: { Authorization: `Bearer ${token}` } });
+        const qrRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/qr/generate`, { headers: { Authorization: `Bearer ${token}`} });
         setQrToken(qrRes.data.data.token);
 
-        const attRes = await axios.get('http://localhost:5000/api/attendance/today', { headers: { Authorization: `Bearer ${token}` } });
+        const attRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/today`, { headers: { Authorization: `Bearer ${token}`} });
         setAttendances(attRes.data.data);
 
         // Fetch basic stats (optional, using existing endpoints)
-        const userRes = await axios.get('http://localhost:5000/api/users', { headers: { Authorization: `Bearer ${token}` } });
-        const classRes = await axios.get('http://localhost:5000/api/classes', { headers: { Authorization: `Bearer ${token}` } });
+        const userRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { headers: { Authorization: `Bearer ${token}`} });
+        const classRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, { headers: { Authorization: `Bearer ${token}`} });
         setStats({ totalUsers: userRes.data.count, totalClasses: classRes.data.count });
       } catch (err) {
         console.error('Error fetching admin data', err);
@@ -30,7 +30,7 @@ export default function AdminDashboard() {
 
     fetchData();
 
-    const socket = io('http://localhost:5000');
+    const socket = io(`${import.meta.env.VITE_API_URL}`);
     socket.on('new-attendance', (newRecord) => {
       setAttendances((prev) => [newRecord, ...prev]);
     });
@@ -43,8 +43,8 @@ export default function AdminDashboard() {
     
     setIsGenerating(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/attendance/generate-alpa', {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/attendance/generate-alpa`, {}, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       alert(res.data.message);
     } catch (err) {

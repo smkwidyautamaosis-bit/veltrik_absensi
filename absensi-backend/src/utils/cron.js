@@ -28,6 +28,26 @@ const initCronJobs = () => {
   });
 
   console.log('Cron Job Terjadwal: Auto-Alpa (15:00 WIB)');
+
+  // Jadwalkan penghapusan notifikasi lama setiap malam jam 00:00 WIB
+  cron.schedule('0 0 * * *', async () => {
+    console.log('Menjalankan Auto-Delete Notifikasi (> 30 hari)...');
+    try {
+      const Notification = require('../models/Notification');
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const result = await Notification.deleteMany({ createdAt: { $lt: thirtyDaysAgo } });
+      console.log(`Berhasil menghapus ${result.deletedCount} notifikasi lama.`);
+    } catch (error) {
+      console.error('Gagal menjalankan Auto-Delete Notifikasi:', error);
+    }
+  }, {
+    scheduled: true,
+    timezone: "Asia/Jakarta"
+  });
+  
+  console.log('Cron Job Terjadwal: Auto-Delete Notifikasi (00:00 WIB)');
 };
 
 module.exports = initCronJobs;

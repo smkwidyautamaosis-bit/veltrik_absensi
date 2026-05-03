@@ -36,8 +36,8 @@ export default function Report() {
 
   const fetchClasses = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/classes', {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setClasses(response.data.data);
     } catch (err) {
@@ -59,8 +59,8 @@ export default function Report() {
       if (filters.endDate) queryParams.append('endDate', filters.endDate);
       if (filters.classId) queryParams.append('classId', filters.classId);
 
-      const response = await axios.get(`http://localhost:5000/api/attendance/report?${queryParams.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/report?${queryParams.toString()}`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setAttendances(response.data.data);
     } catch (err) {
@@ -124,7 +124,7 @@ export default function Report() {
       const date = record.date;
       const time = new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
       const studentName = record.student?.name || '-';
-      const className = record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}` : '-';
+      const className = record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}`: '-';
       const status = record.status.toUpperCase();
       
       tableRows.push([index + 1, date, time, studentName, className, status]);
@@ -179,7 +179,7 @@ export default function Report() {
       Waktu: new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       Nama_Siswa: record.student?.name || '-',
       NISN: record.student?.nisn || '-',
-      Kelas: record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}` : '-',
+      Kelas: record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}`: '-',
       Status: record.status.toUpperCase()
     }));
 
@@ -362,8 +362,13 @@ export default function Report() {
                       <tr key={record._id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-5 py-3 whitespace-nowrap text-gray-900 text-xs font-medium">{record.date}</td>
                         <td className="px-5 py-3 text-xs">{new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
-                        <td className="px-5 py-3 text-xs text-gray-900 font-semibold">{record.student?.name || '-'}</td>
-                        <td className="px-5 py-3 text-xs">{record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}` : '-'}</td>
+                        <td className="px-5 py-3 text-xs text-gray-900 font-semibold">
+                          {record.student?.name || '-'}
+                          {record.student?.studentStatus === 'Pindahan' && (
+                            <span className="ml-1.5 px-1.5 py-0.5 text-[8px] bg-orange-100 text-orange-700 rounded font-bold uppercase tracking-tighter">Pindahan</span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-xs">{record.student?.classId ? `${record.student.classId.name} ${record.student.classId.major}`: '-'}</td>
                         <td className="px-5 py-3 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wider ${getStatusColor(record.status)}`}>
                             {record.status}

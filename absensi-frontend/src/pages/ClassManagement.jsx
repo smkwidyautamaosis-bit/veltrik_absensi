@@ -12,6 +12,8 @@ export default function ClassManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,11 +27,11 @@ export default function ClassManagement() {
   const fetchData = async () => {
     try {
       const [classRes, teacherRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/classes', {
-          headers: { Authorization: `Bearer ${token}` }
+        axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, {
+          headers: { Authorization: `Bearer ${token}`}
         }),
-        axios.get('http://localhost:5000/api/users?role=wali_kelas', {
-          headers: { Authorization: `Bearer ${token}` }
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=wali_kelas`, {
+          headers: { Authorization: `Bearer ${token}`}
         })
       ]);
       setClasses(classRes.data.data);
@@ -61,27 +63,57 @@ export default function ClassManagement() {
       const payload = { ...formData };
       if (!payload.waliKelasId) delete payload.waliKelasId;
 
-      await axios.post('http://localhost:5000/api/classes', payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuccess('Data kelas berhasil ditambahkan.');
+      if (isEditing) {
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/classes/${editId}`, payload, {
+          headers: { Authorization: `Bearer ${token}`}
+        });
+        setSuccess('Data kelas berhasil diperbarui.');
+      } else {
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/classes`, payload, {
+          headers: { Authorization: `Bearer ${token}`}
+        });
+        setSuccess('Data kelas berhasil ditambahkan.');
+      }
+      
       setFormData({ name: '', major: '', level: 'X', academicYear: '2024/2025', capacity: 36, waliKelasId: '' });
+      setIsEditing(false);
+      setEditId(null);
       fetchData(); 
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal menambahkan data kelas.');
+      setError(err.response?.data?.message || 'Gagal menyimpan data kelas.');
       setTimeout(() => setError(''), 3000);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleEdit = (cls) => {
+    setIsEditing(true);
+    setEditId(cls._id);
+    setFormData({
+      name: cls.name,
+      major: cls.major,
+      level: cls.level,
+      academicYear: cls.academicYear || '',
+      capacity: cls.capacity,
+      waliKelasId: cls.waliKelasId?._id || ''
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setFormData({ name: '', major: '', level: 'X', academicYear: '2024/2025', capacity: 36, waliKelasId: '' });
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm('Hapus permanen data kelas ini? Data siswa tidak akan terhapus, namun tidak akan memiliki kelas.')) return;
     
     try {
-      await axios.delete(`http://localhost:5000/api/classes/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/classes/${id}`, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setSuccess('Data kelas berhasil dihapus.');
       fetchData();
@@ -95,8 +127,8 @@ export default function ClassManagement() {
     if (!window.confirm('Arsipkan kelas ini? Kelas yang diarsipkan tidak akan muncul di daftar aktif.')) return;
     
     try {
-      await axios.put(`http://localhost:5000/api/classes/${id}/archive`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/classes/${id}/archive`, {}, {
+        headers: { Authorization: `Bearer ${token}`}
       });
       setSuccess('Data kelas berhasil diarsipkan.');
       fetchData();
@@ -124,7 +156,7 @@ export default function ClassManagement() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="bg-white p-6 border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-[#183057] mb-6 uppercase tracking-wider">Tambah Kelas Baru</h2>
+            <h2 className="text-sm font-bold text-[#183057] mb-6 uppercase tracking-wider">{isEditing ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Kelas</label>
@@ -159,10 +191,15 @@ export default function ClassManagement() {
                   {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                 </select>
               </div>
-              <div className="pt-2">
-                <button type="submit" disabled={isLoading} className="w-full bg-[#183057] text-white py-2.5 text-sm font-semibold hover:bg-[#112240] transition disabled:bg-gray-400">
-                  {isLoading ? 'Menyimpan...' : 'Simpan Data'}
+              <div className="pt-2 flex gap-2">
+                <button type="submit" disabled={isLoading} className="flex-1 bg-[#183057] text-white py-2.5 text-sm font-semibold hover:bg-[#112240] transition disabled:bg-gray-400">
+                  {isLoading ? 'Menyimpan...' : isEditing ? 'Update Data' : 'Simpan Data'}
                 </button>
+                {isEditing && (
+                  <button type="button" onClick={handleCancelEdit} className="px-4 py-2.5 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition">
+                    Batal
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -192,6 +229,7 @@ export default function ClassManagement() {
                       <td className="px-6 py-4 text-gray-500">{cls.academicYear || '-'}</td>
                       <td className="px-6 py-4 text-gray-500">{cls.waliKelasId ? cls.waliKelasId.name : '-'}</td>
                       <td className="px-6 py-4 text-right space-x-3 whitespace-nowrap">
+                        <button onClick={() => handleEdit(cls)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-wider">Edit</button>
                         <button onClick={() => handleArchive(cls._id)} className="text-yellow-600 hover:text-yellow-800 text-xs font-bold uppercase tracking-wider">Arsip</button>
                         <button onClick={() => handleDelete(cls._id)} className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider">Hapus</button>
                       </td>

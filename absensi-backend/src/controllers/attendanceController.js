@@ -2,6 +2,8 @@ const Attendance = require('../models/Attendance');
 const Config = require('../models/Config');
 const Holiday = require('../models/Holiday');
 const { calculateDistance } = require('../utils/haversine');
+const { sendNotification } = require('../utils/notificationService');
+const User = require('../models/User');
 
 // Default config if not found
 const DEFAULT_LAT = -6.2088;
@@ -51,6 +53,17 @@ exports.checkIn = async (req, res, next) => {
 
     const distance = calculateDistance(lat, lng, schoolLat, schoolLng);
     if (distance > maxRadius) {
+      // Notifikasi ke Admin (Opsional: Wali Kelas kalau tau)
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        sendNotification({
+          recipient: admin._id,
+          title: 'Percobaan Absen Luar Radius',
+          message: `Siswa mencoba absen dari luar radius sekolah (${Math.round(distance)}m)`,
+          type: 'warning'
+        });
+      }
+
       return res.status(403).json({
         success: false,
         message: `Anda berada di luar radius sekolah. Jarak: ${Math.round(distance)}m (Maksimal: ${maxRadius}m)`,
@@ -87,6 +100,25 @@ exports.checkIn = async (req, res, next) => {
     // Emit event realtime ke dashboard
     const io = req.app.get('io');
     io.emit('new-attendance', populatedAttendance);
+
+    // Kirim notifikasi ke Siswa
+    sendNotification({
+      recipient: studentId,
+      title: 'Absensi Berhasil',
+      message: `Anda telah berhasil melakukan absen masuk hari ini dengan status: ${status}`,
+      type: 'success',
+      link: '/dashboard'
+    });
+
+    // Notifikasi ke Orang Tua
+    if (req.user.parentId) {
+      sendNotification({
+        recipient: req.user.parentId,
+        title: 'Notifikasi Kehadiran Anak',
+        message: `Anak Anda telah absen masuk sekolah hari ini dengan status: ${status}`,
+        type: status === 'hadir' ? 'success' : 'warning'
+      });
+    }
 
     res.status(201).json({
       success: true,
@@ -211,8 +243,17 @@ exports.generateAlpa = async (req, res, next) => {
     const User = require('../models/User'); // Import User locally untuk hindari circular dependency
     const today = new Date().toISOString().split('T')[0];
 
-    // Ambil semua ID siswa aktif
-    const students = await User.find({ role: 'siswa' }).select('_id');
+    // Ambil semua ID siswa aktif yang sudah masuk (joinDate <= today)
+    const todayObj = new Date(today);
+    todayObj.setHours(23, 59, 59, 999); // Pastikan sampai akhir hari
+
+    const students = await User.find({ 
+      role: 'siswa',
+      $or: [
+        { joinDate: { $lte: todayObj } },
+        { joinDate: { $exists: false } }
+      ]
+    }).select('_id');
     const studentIds = students.map(s => s._id.toString());
 
     // Ambil semua absensi hari ini
@@ -237,6 +278,42 @@ exports.generateAlpa = async (req, res, next) => {
     }));
 
     await Attendance.insertMany(alpaRecords);
+
+    // Kirim Notifikasi ke Wali Kelas
+    const absentStudentsDetail = await User.find({ _id: { $in: absentStudentIds } }).populate('classId');
+    
+    // Kelompokkan berdasarkan classId
+    const classCount = {};
+    absentStudentsDetail.forEach(student => {
+      if (student.classId) {
+        const cId = student.classId._id.toString();
+        classCount[cId] = (classCount[cId] || 0) + 1;
+      }
+      
+      // Notifikasi ke Orang Tua
+      if (student.parentId) {
+        sendNotification({
+          recipient: student.parentId,
+          title: 'Peringatan Ketidakhadiran',
+          message: `Anak Anda (${student.name}) tercatat ALFA (tanpa keterangan) hari ini.`,
+          type: 'error',
+          link: '/dashboard'
+        });
+      }
+    });
+
+    for (const [classId, count] of Object.entries(classCount)) {
+      const waliKelas = await User.findOne({ role: 'wali_kelas', classId });
+      if (waliKelas) {
+        sendNotification({
+          recipient: waliKelas._id,
+          title: 'Rekap Siswa Alpa',
+          message: `Terdapat ${count} siswa di kelas Anda yang Alpa (tanpa keterangan) hari ini.`,
+          type: 'warning',
+          link: '/dashboard'
+        });
+      }
+    }
 
     res.status(201).json({ 
       success: true, 

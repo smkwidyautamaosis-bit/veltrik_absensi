@@ -45,6 +45,24 @@ const userSchema = new mongoose.Schema(
     address: {
       type: String,
     },
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null, // Hanya diisi jika role === 'siswa'
+    },
+    studentStatus: {
+      type: String,
+      enum: ['Aktif', 'Pindahan', 'Alumni'],
+      default: 'Aktif',
+    },
+    joinDate: {
+      type: Date,
+      default: Date.now,
+    },
+    previousSchool: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

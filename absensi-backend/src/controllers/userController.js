@@ -71,10 +71,18 @@ exports.updateUser = async (req, res, next) => {
 // @route   DELETE /api/users/:id
 exports.deleteUser = async (req, res, next) => {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
+    const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
     }
+
+    // Jika yang dihapus adalah orang tua, bersihkan parentId di semua siswanya
+    if (user.role === 'orang_tua') {
+      await User.updateMany({ parentId: user._id }, { $set: { parentId: null } });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+    
     res.status(200).json({ success: true, message: 'User berhasil dihapus', data: {} });
   } catch (error) {
     next(error);

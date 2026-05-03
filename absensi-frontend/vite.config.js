@@ -8,6 +8,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['logo.png'],
+      workbox: {
+        importScripts: ['/push-sw.js']
+      },
       manifest: {
         name: 'Sistem Absensi SMK Widya Utama',
         short_name: 'Absensi SMKWU',
