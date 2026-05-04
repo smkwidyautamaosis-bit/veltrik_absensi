@@ -41,7 +41,7 @@ export default function GuruDashboard() {
       
       <div className="bg-white border border-gray-200 p-6 md:p-8 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#183057]">Selamat Datang, Bapak/Ibu {user?.name}</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-maroon">Selamat Datang, Bapak/Ibu {user?.name}</h2>
           <p className="text-sm text-gray-500 mt-1">Anda masuk sebagai Guru Mata Pelajaran. Berikut adalah jadwal Anda untuk hari ini.</p>
         </div>
         <div className="bg-blue-50 border border-blue-100 px-5 py-3 rounded-md text-center shrink-0">
@@ -58,7 +58,7 @@ export default function GuruDashboard() {
         <div className="p-5">
           {loading ? (
             <div className="flex justify-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#183057]"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon"></div>
             </div>
           ) : schedules.length === 0 ? (
             <div className="text-center py-10 bg-gray-50 rounded-md border border-dashed border-gray-300">

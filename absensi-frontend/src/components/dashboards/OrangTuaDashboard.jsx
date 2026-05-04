@@ -87,7 +87,7 @@ export default function OrangTuaDashboard() {
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 p-6 md:p-8 rounded-lg flex flex-col md:flex-row items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-[#183057]">Portal Orang Tua / Wali Murid</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-maroon">Portal Orang Tua / Wali Murid</h2>
           <p className="text-sm text-gray-500 mt-1">Pantau kehadiran dan status anak Anda secara real-time dari sini.</p>
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function OrangTuaDashboard() {
 
       {loading ? (
         <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#183057]"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon"></div>
         </div>
       ) : childrenData.length === 0 ? (
         <div className="bg-white p-10 border border-gray-200 rounded-lg text-center shadow-sm">
@@ -123,8 +123,8 @@ export default function OrangTuaDashboard() {
           {childrenData.map(child => (
             <div key={child._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition">
               <div className="p-5 border-b border-gray-100 flex items-start gap-4">
-                <div className="w-14 h-14 bg-[#183057]/10 rounded-full flex items-center justify-center shrink-0">
-                  <span className="text-[#183057] font-bold text-xl">{child.name.charAt(0)}</span>
+                <div className="w-14 h-14 bg-maroon/10 rounded-full flex items-center justify-center shrink-0">
+                  <span className="text-maroon font-bold text-xl">{child.name.charAt(0)}</span>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-lg font-bold text-gray-900 truncate">{child.name}</h4>

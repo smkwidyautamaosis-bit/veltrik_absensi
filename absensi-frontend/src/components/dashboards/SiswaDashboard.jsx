@@ -7,7 +7,8 @@ export default function SiswaDashboard() {
   const token = localStorage.getItem('token');
   const [studentHistory, setStudentHistory] = useState([]);
   const [permissions, setPermissions] = useState([]);
-  const [activeTab, setActiveTab] = useState('absensi'); // 'absensi' | 'izin'
+  const [activeTab, setActiveTab] = useState('absensi');
+  const [todayStatus, setTodayStatus] = useState(null);
 
   // State form izin
   const [formData, setFormData] = useState({ startDate: '', endDate: '', type: 'izin', reason: '' });
@@ -18,12 +19,18 @@ export default function SiswaDashboard() {
     const fetchData = async () => {
       try {
         const resHistory = await axios.get(`${import.meta.env.VITE_API_URL}/api/attendance/history`, {
-          headers: { Authorization: `Bearer ${token}`}
+          headers: { Authorization: `Bearer ${token}` }
         });
-        setStudentHistory(resHistory.data.data);
+        const history = resHistory.data.data;
+        setStudentHistory(history);
+
+        // Cek status hari ini
+        const today = new Date().toISOString().split('T')[0];
+        const todayRecord = history.find(r => r.date === today);
+        setTodayStatus(todayRecord || null);
 
         const resPerm = await axios.get(`${import.meta.env.VITE_API_URL}/api/permissions/me`, {
-          headers: { Authorization: `Bearer ${token}`}
+          headers: { Authorization: `Bearer ${token}` }
         });
         setPermissions(resPerm.data.data);
       } catch (err) {
@@ -63,19 +70,30 @@ export default function SiswaDashboard() {
     }
   };
 
+  const getStatusConfig = (status) => {
+    const map = {
+      hadir: { bg: 'bg-status-hadir', label: 'Hadir ✓', icon: '✅', desc: 'Anda sudah tercatat hadir hari ini' },
+      telat: { bg: 'bg-status-telat', label: 'Telat', icon: '⏰', desc: 'Anda tercatat terlambat hari ini' },
+      izin:  { bg: 'bg-status-izin', label: 'Izin', icon: '📋', desc: 'Anda sedang dalam status izin' },
+      sakit: { bg: 'bg-status-sakit', label: 'Sakit', icon: '🏥', desc: 'Anda sedang dalam status sakit' },
+      alfa:  { bg: 'bg-status-alpa', label: 'Alpa', icon: '❌', desc: 'Anda belum melakukan absensi' },
+    };
+    return map[status] || { bg: 'bg-gray-400', label: status, icon: '❓', desc: '' };
+  };
+
   return (
     <div className="space-y-6">
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-200 pb-2">
+      <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
         <button 
           onClick={() => setActiveTab('absensi')} 
-          className={`text-sm font-bold pb-2 border-b-2 transition-colors ${activeTab === 'absensi' ? 'border-[#183057] text-[#183057]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+          className={`flex-1 text-sm font-semibold py-2.5 rounded-lg transition-all ${activeTab === 'absensi' ? 'bg-white text-maroon shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
         >
           Kehadiran Harian
         </button>
         <button 
           onClick={() => setActiveTab('izin')} 
-          className={`text-sm font-bold pb-2 border-b-2 transition-colors ${activeTab === 'izin' ? 'border-[#183057] text-[#183057]' : 'border-transparent text-gray-400 hover:text-gray-600'}`}
+          className={`flex-1 text-sm font-semibold py-2.5 rounded-lg transition-all ${activeTab === 'izin' ? 'bg-white text-maroon shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
         >
           Pengajuan Izin / Sakit
         </button>
@@ -83,47 +101,88 @@ export default function SiswaDashboard() {
 
       {activeTab === 'absensi' && (
         <>
-          <div className="bg-white border border-gray-200 p-8 rounded-lg flex flex-col items-start justify-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Waktunya Absen</h2>
-            <p className="text-sm text-gray-500 mb-6 max-w-sm">Pastikan Anda sudah berada di area sekolah sebelum memindai QR Code.</p>
-            <button 
-              onClick={() => navigate('/scanner')}
-              className="bg-[#183057] text-white px-6 py-3 rounded-md text-sm font-bold hover:bg-[#112240] transition-colors"
-            >
-              Buka Kamera Scanner
-            </button>
+          {/* Status Card Hari Ini */}
+          <div className={`rounded-2xl p-6 text-white ${todayStatus ? getStatusConfig(todayStatus.status).bg : 'bg-gray-300'} animate-slide-up`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-white/70 uppercase tracking-wider mb-1">Status Hari Ini</p>
+                <h3 className="text-2xl font-black">
+                  {todayStatus ? getStatusConfig(todayStatus.status).label : 'Belum Absen'}
+                </h3>
+                <p className="text-sm text-white/80 mt-1">
+                  {todayStatus ? getStatusConfig(todayStatus.status).desc : 'Silakan scan QR di gerbang sekolah'}
+                </p>
+                {todayStatus && (
+                  <p className="text-xs text-white/60 mt-2 font-medium">
+                    Waktu scan: {new Date(todayStatus.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} WIB
+                  </p>
+                )}
+              </div>
+              <div className="text-5xl opacity-50">
+                {todayStatus ? getStatusConfig(todayStatus.status).icon : '⏳'}
+              </div>
+            </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Riwayat Kehadiran Anda</h2>
+          {/* Tombol Scan QR */}
+          {!todayStatus && (
+            <button 
+              onClick={() => navigate('/scanner')}
+              className="scan-pulse w-full bg-maroon hover:bg-maroon-dark text-white rounded-2xl p-8 flex flex-col items-center justify-center gap-4 transition-all shadow-xl shadow-maroon/20 hover:shadow-2xl hover:shadow-maroon/30 animate-bounce-in"
+            >
+              <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center">
+                <svg className="w-10 h-10 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zm0 9.75c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zm9.75-9.75c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                </svg>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold">Tap untuk Scan Kehadiran</p>
+                <p className="text-xs text-white/60 mt-1 font-medium">Arahkan kamera ke QR Code di gerbang</p>
+              </div>
+            </button>
+          )}
+
+          {todayStatus && (
+            <button 
+              disabled
+              className="w-full bg-gray-100 text-gray-400 rounded-2xl p-6 flex items-center justify-center gap-3 cursor-not-allowed"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+              <span className="text-sm font-semibold">Anda sudah absen hari ini</span>
+            </button>
+          )}
+
+          {/* Riwayat 5 Hari */}
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Riwayat Kehadiran</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Tanggal</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Waktu Scan</th>
-                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tanggal</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Waktu Scan</th>
+                    <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-50">
                   {studentHistory.length > 0 ? (
-                    studentHistory.map((record) => (
-                      <tr key={record._id} className="hover:bg-gray-50/50">
-                        <td className="px-6 py-4 text-sm font-medium">{record.date}</td>
-                        <td className="px-6 py-4 text-sm">
+                    studentHistory.slice(0, 10).map((record) => (
+                      <tr key={record._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-5 py-3.5 text-sm font-medium">{record.date}</td>
+                        <td className="px-5 py-3.5 text-sm text-gray-500">
                           {new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${record.status === 'hadir' ? 'bg-green-50 text-green-700' : record.status === 'telat' ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-700'}`}>
+                        <td className="px-5 py-3.5">
+                          <span className={`badge badge-${record.status === 'alfa' ? 'alpa' : record.status}`}>
                             {record.status}
                           </span>
                         </td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="3" className="px-6 py-10 text-center text-sm text-gray-500">Belum ada riwayat absensi.</td></tr>
+                    <tr><td colSpan="3" className="px-5 py-10 text-center text-sm text-gray-400">Belum ada riwayat absensi.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -134,69 +193,74 @@ export default function SiswaDashboard() {
 
       {activeTab === 'izin' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white border border-gray-200 p-6 rounded-lg h-fit">
+          <div className="bg-white rounded-xl border border-gray-100 p-6 h-fit">
             <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-6">Formulir Pengajuan</h2>
             <form onSubmit={handleSubmitIzin} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Mulai Tanggal</label>
-                  <input type="date" required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full text-sm border border-gray-200 rounded px-3 py-2" />
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">Mulai Tanggal</label>
+                  <input type="date" required value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition" />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
-                  <input type="date" required value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full text-sm border border-gray-200 rounded px-3 py-2" />
+                  <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">Sampai Tanggal</label>
+                  <input type="date" required value={formData.endDate} onChange={e => setFormData({...formData, endDate: e.target.value})} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition" />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Jenis Pengajuan</label>
-                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full text-sm border border-gray-200 rounded px-3 py-2">
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">Jenis Pengajuan</label>
+                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition bg-white">
                   <option value="izin">Izin</option>
                   <option value="sakit">Sakit</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Keterangan / Alasan</label>
-                <textarea required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} rows="3" className="w-full text-sm border border-gray-200 rounded px-3 py-2" placeholder="Tuliskan alasan lengkap..."></textarea>
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">Keterangan / Alasan</label>
+                <textarea required value={formData.reason} onChange={e => setFormData({...formData, reason: e.target.value})} rows="3" className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-maroon/20 focus:border-maroon transition" placeholder="Tuliskan alasan lengkap..."></textarea>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Foto Bukti (Surat)</label>
-                <input type="file" required accept=".jpg,.jpeg,.png,.pdf" onChange={e => setFile(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#183057] file:text-white hover:file:bg-[#112240]" />
+                <label className="block text-xs font-semibold text-gray-400 uppercase mb-1.5">Foto Bukti (Surat)</label>
+                <input type="file" required accept=".jpg,.jpeg,.png,.pdf" onChange={e => setFile(e.target.files[0])} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-maroon file:text-white hover:file:bg-maroon-dark" />
                 <p className="text-[10px] text-gray-400 mt-1">Format: JPG, PNG, PDF. Maks: 2MB.</p>
               </div>
-              <button type="submit" disabled={isSubmitting} className="w-full bg-[#183057] text-white py-2.5 rounded-md text-sm font-bold mt-2 disabled:opacity-50">
-                {isSubmitting ? 'Mengirim...' : 'Kirim Pengajuan'}
+              <button type="submit" disabled={isSubmitting} className="w-full bg-maroon hover:bg-maroon-dark text-white py-3 rounded-xl text-sm font-bold transition disabled:opacity-50 flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Mengirim...
+                  </>
+                ) : 'Kirim Pengajuan'}
               </button>
             </form>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden h-fit">
-            <div className="px-6 py-4 border-b border-gray-200 bg-white">
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden h-fit">
+            <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Status Pengajuan Anda</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-gray-50/80 border-b border-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Tanggal</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Tipe</th>
-                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase">Tanggal</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase">Tipe</th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-50">
                   {permissions.length > 0 ? (
                     permissions.map(p => (
                       <tr key={p._id} className="hover:bg-gray-50/50">
                         <td className="px-4 py-3 text-xs">{p.startDate} s/d {p.endDate}</td>
-                        <td className="px-4 py-3 text-xs uppercase font-bold text-gray-500">{p.type}</td>
-                        <td className="px-4 py-3 text-xs">
-                          <span className={`px-2 py-1 rounded font-bold uppercase tracking-wider text-[10px] ${p.status === 'approved' ? 'bg-green-100 text-green-700' : p.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                            {p.status}
+                        <td className="px-4 py-3"><span className={`badge badge-${p.type}`}>{p.type}</span></td>
+                        <td className="px-4 py-3">
+                          <span className={`badge ${p.status === 'approved' ? 'badge-hadir' : p.status === 'rejected' ? 'badge-alpa' : 'badge-telat'}`}>
+                            {p.status === 'approved' ? 'Disetujui' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                           </span>
                         </td>
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="3" className="px-4 py-8 text-center text-xs text-gray-500">Belum ada pengajuan.</td></tr>
+                    <tr><td colSpan="3" className="px-4 py-8 text-center text-xs text-gray-400">Belum ada pengajuan.</td></tr>
                   )}
                 </tbody>
               </table>

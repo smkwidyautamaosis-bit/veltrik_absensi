@@ -1,5 +1,5 @@
 const express = require('express');
-const { getParents, createParent, getChildren, linkStudent, unlinkStudent } = require('../controllers/parentController');
+const { getParents, createParent, getChildren, linkStudent, unlinkStudent, deleteParent } = require('../controllers/parentController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
@@ -19,5 +19,8 @@ router.route('/:id/link-student')
 
 router.route('/:id/unlink-student')
   .post(authorize('admin', 'tata_usaha'), unlinkStudent);
+
+router.route('/:id')
+  .delete(authorize('admin', 'tata_usaha'), deleteParent);
 
 module.exports = router;

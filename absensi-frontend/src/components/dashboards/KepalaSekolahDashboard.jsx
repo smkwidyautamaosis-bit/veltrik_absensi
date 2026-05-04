@@ -3,7 +3,7 @@ export default function KepalaSekolahDashboard() {
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 p-8 rounded-lg flex flex-col md:flex-row items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#183057] mb-2">Laporan Ekssekutif Sekolah</h2>
+          <h2 className="text-xl font-bold text-maroon mb-2">Laporan Ekssekutif Sekolah</h2>
           <p className="text-sm text-gray-500">Pantau performa kehadiran seluruh siswa secara makro.</p>
         </div>
         <div className="mt-4 md:mt-0 text-right">

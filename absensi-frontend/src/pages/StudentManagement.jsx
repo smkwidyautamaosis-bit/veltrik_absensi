@@ -327,7 +327,7 @@ export default function StudentManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 p-10">
+    <div className="min-h-screen bg-gray-50 font-poppins text-gray-900 p-10">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header Flat & Minimalis */}
@@ -565,7 +565,7 @@ export default function StudentManagement() {
                     <button 
                       onClick={handleUploadPreview}
                       disabled={!importFile || isImportLoading}
-                      className="bg-[#183057] text-white px-6 py-2 rounded-md font-bold text-sm disabled:bg-gray-400"
+                      className="bg-maroon text-white px-6 py-2 rounded-md font-bold text-sm disabled:bg-gray-400"
                     >
                       {isImportLoading ? 'Memproses...' : 'Upload & Preview'}
                     </button>

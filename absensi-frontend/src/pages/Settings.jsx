@@ -97,14 +97,14 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
         <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-[#183057] leading-tight">SMK Widya Utama</h1>
+            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
             <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
           </div>
         </div>
@@ -118,7 +118,7 @@ export default function Settings() {
           </button>
           
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Sistem</div>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-[#183057] bg-blue-50/50 rounded-md transition">
+          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
             Pengaturan
           </button>
         </nav>
@@ -129,7 +129,7 @@ export default function Settings() {
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-[#183057] leading-tight">SMK Widya Utama</h1>
+            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Pengaturan</p>
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function Settings() {
             
             {loading ? (
               <div className="flex justify-center items-center py-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#183057]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon"></div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -179,7 +179,7 @@ export default function Settings() {
                       name="school_lat"
                       value={config.school_lat}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-[#183057] focus:border-[#183057] block p-3 transition"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon block p-3 transition"
                       required
                     />
                   </div>
@@ -191,7 +191,7 @@ export default function Settings() {
                       name="school_lng"
                       value={config.school_lng}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-[#183057] focus:border-[#183057] block p-3 transition"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon block p-3 transition"
                       required
                     />
                   </div>
@@ -201,7 +201,7 @@ export default function Settings() {
                   <button 
                     type="button"
                     onClick={getLocationFromDevice}
-                    className="text-xs font-semibold text-[#183057] bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-md transition"
+                    className="text-xs font-semibold text-maroon bg-blue-50 hover:bg-blue-100 px-4 py-2 rounded-md transition"
                   >
                     + Gunakan Lokasi Saat Ini (Perangkat Anda)
                   </button>
@@ -216,7 +216,7 @@ export default function Settings() {
                       name="max_radius"
                       value={config.max_radius}
                       onChange={handleChange}
-                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-[#183057] focus:border-[#183057] block p-3 transition"
+                      className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon block p-3 transition"
                       required
                     />
                     <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-gray-500 text-sm">
@@ -230,7 +230,7 @@ export default function Settings() {
                   <button 
                     type="submit" 
                     disabled={saving}
-                    className={`w-full text-white font-semibold rounded-md text-sm px-5 py-3 transition ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#183057] hover:bg-[#112240]'}`}
+                    className={`w-full text-white font-semibold rounded-md text-sm px-5 py-3 transition ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-maroon hover:bg-maroon-dark'}`}
                   >
                     {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
                   </button>

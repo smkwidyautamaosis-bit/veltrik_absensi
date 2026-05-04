@@ -180,11 +180,11 @@ export default function ReportModule() {
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Dari Tanggal</label>
-            <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none focus:border-[#183057]" />
+            <input type="date" required value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none focus:border-maroon" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Sampai Tanggal</label>
-            <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none focus:border-[#183057]" />
+            <input type="date" required value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none focus:border-maroon" />
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Kelas</label>
@@ -192,7 +192,7 @@ export default function ReportModule() {
               value={selectedClass} 
               onChange={e => setSelectedClass(e.target.value)} 
               disabled={isWaliKelas}
-              className={`w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none ${isWaliKelas ? 'bg-gray-100 cursor-not-allowed' : 'bg-white focus:border-[#183057]'}`}
+              className={`w-full text-sm border border-gray-200 rounded px-3 py-2 outline-none ${isWaliKelas ? 'bg-gray-100 cursor-not-allowed' : 'bg-white focus:border-maroon'}`}
             >
               {isWaliKelas ? (
                 <option value={user.classId || ''}>Kelas Saya</option>
@@ -206,7 +206,7 @@ export default function ReportModule() {
               )}
             </select>
           </div>
-          <button type="submit" disabled={isLoading} className="bg-[#183057] text-white py-2 rounded text-sm font-bold hover:bg-[#112240] transition disabled:opacity-50 h-[38px]">
+          <button type="submit" disabled={isLoading} className="bg-maroon text-white py-2 rounded text-sm font-bold hover:bg-maroon-dark transition disabled:opacity-50 h-[38px]">
             {isLoading ? 'Mencari...' : 'Tarik Data'}
           </button>
         </form>

@@ -106,7 +106,7 @@ export default function TeacherManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 p-10">
+    <div className="min-h-screen bg-gray-50 font-poppins text-gray-900 p-10">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header Flat & Minimalis */}

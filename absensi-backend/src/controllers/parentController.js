@@ -107,3 +107,25 @@ exports.unlinkStudent = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Menghapus akun Orang Tua
+// @route   DELETE /api/parents/:id
+exports.deleteParent = async (req, res, next) => {
+  try {
+    const parentId = req.params.id;
+
+    // Lepaskan semua tautan siswa terlebih dahulu
+    await User.updateMany({ parentId }, { parentId: null });
+
+    // Hapus akun orang tua
+    const parent = await User.findOneAndDelete({ _id: parentId, role: 'orang_tua' });
+    if (!parent) {
+      return res.status(404).json({ success: false, message: 'Data orang tua tidak ditemukan' });
+    }
+
+    res.status(200).json({ success: true, message: 'Akun orang tua berhasil dihapus' });
+  } catch (error) {
+    next(error);
+  }
+};
+

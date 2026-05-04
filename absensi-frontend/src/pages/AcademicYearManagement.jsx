@@ -110,7 +110,7 @@ export default function AcademicYearManagement() {
                   className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none"
                 />
               </div>
-              <button type="submit" className="w-full bg-[#183057] text-white py-2 rounded-md text-sm font-bold hover:bg-black transition">
+              <button type="submit" className="w-full bg-maroon text-white py-2 rounded-md text-sm font-bold hover:bg-black transition">
                 Simpan
               </button>
             </form>

@@ -139,14 +139,14 @@ export default function ClassManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans text-gray-900 p-10">
+    <div className="min-h-screen bg-gray-50 font-poppins text-gray-900 p-10">
       <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex justify-between items-end pb-6 border-b border-gray-200">
           <div>
-            <h1 className="text-2xl font-bold text-[#183057]">Manajemen Data Kelas</h1>
+            <h1 className="text-2xl font-bold text-maroon">Manajemen Data Kelas</h1>
             <p className="text-gray-500 text-sm mt-1">Kelola rombongan belajar dan jurusan secara dinamis.</p>
           </div>
-          <button onClick={() => navigate('/dashboard')} className="px-4 py-2 text-sm font-semibold text-white bg-[#183057] border border-transparent hover:bg-[#112240] transition">
+          <button onClick={() => navigate('/dashboard')} className="px-4 py-2 text-sm font-semibold text-white bg-maroon border border-transparent hover:bg-maroon-dark transition">
             Kembali
           </button>
         </div>
@@ -156,20 +156,20 @@ export default function ClassManagement() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="bg-white p-6 border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-[#183057] mb-6 uppercase tracking-wider">{isEditing ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}</h2>
+            <h2 className="text-sm font-bold text-maroon mb-6 uppercase tracking-wider">{isEditing ? 'Edit Data Kelas' : 'Tambah Kelas Baru'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Kelas</label>
-                <input type="text" name="name" placeholder="Contoh: Perhotelan 1" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+                <input type="text" name="name" placeholder="Contoh: Perhotelan 1" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jurusan</label>
-                <input type="text" name="major" placeholder="Contoh: Perhotelan" value={formData.major} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+                <input type="text" name="major" placeholder="Contoh: Perhotelan" value={formData.major} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tingkat</label>
-                  <select name="level" value={formData.level} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition bg-white">
+                  <select name="level" value={formData.level} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition bg-white">
                     <option value="X">X</option>
                     <option value="XI">XI</option>
                     <option value="XII">XII</option>
@@ -177,22 +177,22 @@ export default function ClassManagement() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kapasitas</label>
-                  <input type="number" name="capacity" min="1" value={formData.capacity} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+                  <input type="number" name="capacity" min="1" value={formData.capacity} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition" />
                 </div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tahun Ajaran</label>
-                <input type="text" name="academicYear" placeholder="Contoh: 2024/2025" value={formData.academicYear} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition" />
+                <input type="text" name="academicYear" placeholder="Contoh: 2024/2025" value={formData.academicYear} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Wali Kelas (Opsional)</label>
-                <select name="waliKelasId" value={formData.waliKelasId} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-[#183057] transition bg-white">
+                <select name="waliKelasId" value={formData.waliKelasId} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 focus:outline-none focus:border-maroon transition bg-white">
                   <option value="">-- Pilih Wali Kelas --</option>
                   {teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}
                 </select>
               </div>
               <div className="pt-2 flex gap-2">
-                <button type="submit" disabled={isLoading} className="flex-1 bg-[#183057] text-white py-2.5 text-sm font-semibold hover:bg-[#112240] transition disabled:bg-gray-400">
+                <button type="submit" disabled={isLoading} className="flex-1 bg-maroon text-white py-2.5 text-sm font-semibold hover:bg-maroon-dark transition disabled:bg-gray-400">
                   {isLoading ? 'Menyimpan...' : isEditing ? 'Update Data' : 'Simpan Data'}
                 </button>
                 {isEditing && (
@@ -206,7 +206,7 @@ export default function ClassManagement() {
 
           <div className="bg-white border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 bg-white">
-              <h2 className="text-sm font-bold text-[#183057] uppercase tracking-wider">Direktori Kelas Aktif</h2>
+              <h2 className="text-sm font-bold text-maroon uppercase tracking-wider">Direktori Kelas Aktif</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm text-gray-600">

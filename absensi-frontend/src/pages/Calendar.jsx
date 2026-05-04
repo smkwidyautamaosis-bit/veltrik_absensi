@@ -87,14 +87,14 @@ export default function Calendar() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-sans text-gray-900 overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
       {/* SIDEBAR */}
       <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
         <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-[#183057] leading-tight">SMK Widya Utama</h1>
+            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
             <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function Calendar() {
           >
             Pengaturan
           </button>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-[#183057] bg-blue-50/50 rounded-md transition">
+          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
             Kalender Sekolah
           </button>
         </nav>
@@ -125,7 +125,7 @@ export default function Calendar() {
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
           <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-[#183057] leading-tight">SMK Widya Utama</h1>
+            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
             <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Kalender Sekolah</p>
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function Calendar() {
             <button 
               onClick={handleSync}
               disabled={syncing}
-              className={`text-xs font-bold text-white px-5 py-2.5 rounded-md transition ${syncing ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#183057] hover:bg-[#112240]'}`}
+              className={`text-xs font-bold text-white px-5 py-2.5 rounded-md transition ${syncing ? 'bg-gray-400 cursor-not-allowed' : 'bg-maroon hover:bg-maroon-dark'}`}
             >
               {syncing ? 'Menyinkronkan...' : '🔄 Sync Libur Nasional API'}
             </button>
@@ -177,7 +177,7 @@ export default function Calendar() {
               <div className="flex-1 overflow-y-auto">
                 {loading ? (
                   <div className="flex justify-center items-center py-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#183057]"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-maroon"></div>
                   </div>
                 ) : holidays.length === 0 ? (
                   <div className="text-center py-10 text-sm text-gray-500">Belum ada hari libur. Silakan sync API atau tambah manual.</div>
@@ -227,7 +227,7 @@ export default function Calendar() {
                     type="date" 
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-[#183057] focus:border-[#183057] p-2.5 transition"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
                     required
                   />
                 </div>
@@ -238,14 +238,14 @@ export default function Calendar() {
                     placeholder="Contoh: HUT Sekolah"
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-[#183057] focus:border-[#183057] p-2.5 transition"
+                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
                     required
                   />
                 </div>
                 <div className="pt-2">
                   <button 
                     type="submit" 
-                    className="w-full text-white bg-[#183057] hover:bg-[#112240] font-semibold rounded-md text-xs px-4 py-2.5 transition"
+                    className="w-full text-white bg-maroon hover:bg-maroon-dark font-semibold rounded-md text-xs px-4 py-2.5 transition"
                   >
                     + Simpan ke Kalender
                   </button>
