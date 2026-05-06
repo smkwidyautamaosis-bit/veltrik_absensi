@@ -15,7 +15,7 @@ export default defineConfig({
         name: 'Sistem Absensi SMK Widya Utama',
         short_name: 'Absensi SMKWU',
         description: 'Sistem Absensi Digital Terpadu SMK Widya Utama',
-        theme_color: '#183057',
+        theme_color: '#800000',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [

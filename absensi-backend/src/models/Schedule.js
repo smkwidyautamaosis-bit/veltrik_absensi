@@ -30,6 +30,11 @@ const scheduleSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Jam Selesai wajib diisi (misal 09:00)'],
     },
+    meetingType: {
+      type: String,
+      enum: ['teori', 'praktik', 'pramuka'],
+      default: 'teori',
+    },
   },
   { timestamps: true }
 );

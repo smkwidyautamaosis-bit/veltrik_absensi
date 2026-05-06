@@ -107,8 +107,8 @@ export default function Dashboard() {
       {/* ===== HEADER MOBILE ===== */}
       <header className="md:hidden bg-maroon-dark px-5 py-3.5 flex justify-between items-center z-20 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-            <span className="text-gold font-black text-xs">V</span>
+          <div className="w-8 h-8 shrink-0">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-sm font-bold text-white leading-tight">VELTRIK</h1>
@@ -128,8 +128,8 @@ export default function Dashboard() {
         
         {/* Logo */}
         <div className="px-5 py-6 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-            <span className="text-gold font-black text-lg">V</span>
+          <div className="w-10 h-10 shrink-0">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-base font-bold text-white tracking-wide leading-tight">VELTRIK</h1>
@@ -178,6 +178,7 @@ export default function Dashboard() {
               )}
               <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Akademik</div>
               <SidebarLink icon={icons.schedule} label="Jadwal Pelajaran" onClick={() => navigate('/schedules')} />
+              <SidebarLink icon={icons.rekap} label="Mata Pelajaran" onClick={() => navigate('/subjects')} />
               <SidebarLink icon={icons.calendar} label="Kalender Sekolah" onClick={() => navigate('/holidays')} />
             </>
           )}

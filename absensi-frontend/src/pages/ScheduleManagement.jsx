@@ -10,6 +10,7 @@ export default function ScheduleManagement() {
   const [schedules, setSchedules] = useState([]);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   
   const [formData, setFormData] = useState({
     id: null,
@@ -18,8 +19,15 @@ export default function ScheduleManagement() {
     subject: '',
     dayOfWeek: 'Senin',
     startTime: '',
-    endTime: ''
+    endTime: '',
+    meetingType: 'teori'
   });
+
+  const meetingTypes = [
+    { value: 'teori', label: 'Teori', color: 'bg-blue-100 text-blue-700' },
+    { value: 'praktik', label: 'Praktik', color: 'bg-green-100 text-green-700' },
+    { value: 'pramuka', label: 'Pramuka', color: 'bg-orange-100 text-orange-700' },
+  ];
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,16 +46,25 @@ export default function ScheduleManagement() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [scheduleRes, classRes, teacherRes] = await Promise.all([
+      const [scheduleRes, classRes, guruRes, waliRes, subjectRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL}/api/schedules`, { headers: { Authorization: `Bearer ${token}`} }),
         axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, { headers: { Authorization: `Bearer ${token}`} }),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=guru`, { headers: { Authorization: `Bearer ${token}`} })
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=guru`, { headers: { Authorization: `Bearer ${token}`} }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=wali_kelas`, { headers: { Authorization: `Bearer ${token}`} }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/subjects`, { headers: { Authorization: `Bearer ${token}`} })
       ]);
       setSchedules(scheduleRes.data.data);
       setClasses(classRes.data.data);
-      setTeachers(teacherRes.data.data);
+      setSubjects(subjectRes.data.data || []);
+      // Gabungkan guru dan wali kelas (wali kelas juga mengajar)
+      const allTeachers = [...(guruRes.data.data || []), ...(waliRes.data.data || [])];
+      setTeachers(allTeachers);
+      if (allTeachers.length === 0) {
+        console.warn('Tidak ada guru ditemukan. Pastikan sudah ada user dengan role guru atau wali_kelas.');
+      }
     } catch (err) {
-      console.error('Gagal mengambil data', err);
+      console.error('Gagal mengambil data:', err);
+      alert('Gagal mengambil data. Silakan refresh halaman.');
     } finally {
       setLoading(false);
     }
@@ -71,7 +88,7 @@ export default function ScheduleManagement() {
         });
         alert('Jadwal berhasil ditambahkan');
       }
-      setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '' });
+      setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '', meetingType: 'teori' });
       setIsEditing(false);
       fetchData();
     } catch (err) {
@@ -88,7 +105,8 @@ export default function ScheduleManagement() {
       subject: sched.subject,
       dayOfWeek: sched.dayOfWeek,
       startTime: sched.startTime,
-      endTime: sched.endTime
+      endTime: sched.endTime,
+      meetingType: sched.meetingType || 'teori'
     });
   };
 
@@ -164,17 +182,34 @@ export default function ScheduleManagement() {
             <h3 className="text-sm font-bold text-gray-900 mb-4">{isEditing ? 'Edit Jadwal' : 'Tambah Jadwal Baru'}</h3>
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Mata Pelajaran</label>
-                <input 
-                  type="text" 
+                <select 
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
                   required
-                  placeholder="Contoh: Matematika Dasar"
                   className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                />
+                >
+                  <option value="">-- Pilih Mata Pelajaran --</option>
+                  {subjects.map(s => (
+                    <option key={s._id} value={s.name}>{s.name}{s.code ? ` (${s.code})` : ''}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Tipe Pertemuan</label>
+                <select 
+                  name="meetingType"
+                  value={formData.meetingType}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
+                >
+                  {meetingTypes.map(mt => (
+                    <option key={mt.value} value={mt.value}>{mt.label}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -255,7 +290,7 @@ export default function ScheduleManagement() {
                     type="button" 
                     onClick={() => {
                       setIsEditing(false);
-                      setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '' });
+                      setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '', meetingType: 'teori' });
                     }}
                     className="text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-md transition"
                   >
@@ -293,6 +328,7 @@ export default function ScheduleManagement() {
                       <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Hari & Jam</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Kelas</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mapel</th>
+                      <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tipe</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Guru</th>
                       <th className="px-5 py-3 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                     </tr>
@@ -308,6 +344,12 @@ export default function ScheduleManagement() {
                           {sched.classId ? `${sched.classId.name} ${sched.classId.major}`: <span className="text-red-500 text-xs">Deleted</span>}
                         </td>
                         <td className="px-5 py-3 font-semibold text-gray-900">{sched.subject}</td>
+                        <td className="px-5 py-3">
+                          {(() => {
+                            const mt = meetingTypes.find(m => m.value === (sched.meetingType || 'teori'));
+                            return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${mt?.color || 'bg-gray-100 text-gray-700'}`}>{mt?.label || 'Teori'}</span>;
+                          })()}
+                        </td>
                         <td className="px-5 py-3 text-xs">{sched.teacher?.name || '-'}</td>
                         <td className="px-5 py-3 whitespace-nowrap text-right">
                           <button 

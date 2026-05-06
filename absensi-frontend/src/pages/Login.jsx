@@ -44,14 +44,9 @@ export default function Login() {
 
         <div className="relative z-10 flex flex-col items-center justify-center w-full px-16 animate-fade-in">
           
-          {/* Shield Logo */}
-          <div className="w-24 h-28 mb-8 relative">
-            <svg viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-2xl">
-              <path d="M50 2L95 22V62C95 88 75 108 50 118C25 108 5 88 5 62V22L50 2Z" fill="#F5A623" fillOpacity="0.2" stroke="#F5A623" strokeWidth="2"/>
-              <path d="M50 12L85 28V60C85 82 68 99 50 108C32 99 15 82 15 60V28L50 12Z" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" strokeWidth="1"/>
-              <text x="50" y="55" textAnchor="middle" fill="#F5A623" fontSize="18" fontWeight="800" fontFamily="Poppins, sans-serif">SWU</text>
-              <text x="50" y="78" textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize="8" fontWeight="600" fontFamily="Poppins, sans-serif">WIDYA UTAMA</text>
-            </svg>
+          {/* School Logo */}
+          <div className="w-28 h-28 mb-8 relative">
+            <img src="/logo.png" alt="Logo SMK Widya Utama" className="w-full h-full object-contain drop-shadow-2xl" />
           </div>
 
           {/* Brand Name */}
@@ -82,8 +77,8 @@ export default function Login() {
         
         {/* Mobile Header (hanya tampil di HP) */}
         <div className="lg:hidden mb-10 text-center animate-fade-in">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #800000, #5C0000)' }}>
-            <span className="text-gold font-black text-lg">V</span>
+          <div className="w-20 h-20 mx-auto mb-4">
+            <img src="/logo.png" alt="Logo SMK Widya Utama" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-black text-maroon tracking-wider">VELTRIK</h1>
           <p className="text-gray-400 text-xs font-medium mt-1">Absensi Digital SMK Widya Utama</p>

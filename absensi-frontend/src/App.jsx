@@ -13,6 +13,7 @@ import Report from './pages/Report'; // Tambahan untuk Laporan PDF & Excel
 import ScheduleManagement from './pages/ScheduleManagement'; // Tambahan untuk Jadwal
 import ParentManagement from './pages/ParentManagement'; // Tambahan untuk Orang Tua
 import AcademicYearManagement from './pages/AcademicYearManagement';
+import SubjectManagement from './pages/SubjectManagement'; // Tambahan untuk Mata Pelajaran
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -128,6 +129,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AcademicYearManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/subjects" 
+          element={
+            <ProtectedRoute>
+              <SubjectManagement />
             </ProtectedRoute>
           } 
         />
