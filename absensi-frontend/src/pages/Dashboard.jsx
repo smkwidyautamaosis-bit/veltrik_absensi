@@ -8,6 +8,7 @@ import WaliKelasDashboard from '../components/dashboards/WaliKelasDashboard';
 import GuruDashboard from '../components/dashboards/GuruDashboard';
 import OrangTuaDashboard from '../components/dashboards/OrangTuaDashboard';
 import NotificationBell from '../components/NotificationBell';
+import AppSidebar from '../components/AppSidebar';
 
 // Helper: Greeting berdasarkan jam
 function getGreeting() {
@@ -37,12 +38,6 @@ function getRoleLabel(role) {
   return map[role] || role;
 }
 
-// Helper: Inisial nama
-function getInitials(name) {
-  if (!name) return '?';
-  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-}
-
 // SVG Icons
 const icons = {
   dashboard: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
@@ -59,18 +54,6 @@ const icons = {
   logout: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" /></svg>,
   rekap: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z" /></svg>,
 };
-
-function SidebarLink({ icon, label, onClick, active }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${active ? 'bg-white/10 text-gold' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  );
-}
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -123,89 +106,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* ===== SIDEBAR DESKTOP ===== */}
-      <aside className="hidden md:flex w-64 flex-col hide-on-print z-10 shrink-0" style={{ background: 'linear-gradient(180deg, #5C0000 0%, #4A0000 100%)' }}>
-        
-        {/* Logo */}
-        <div className="px-5 py-6 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-white tracking-wide leading-tight">VELTRIK</h1>
-            <p className="text-[9px] text-white/40 uppercase tracking-widest font-medium mt-0.5">Absensi Digital</p>
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div className="px-5 py-4 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
-              <span className="text-gold text-xs font-bold">{getInitials(user?.name)}</span>
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
-              <span className={`badge badge-${user?.role} mt-0.5`} style={{ fontSize: '8px', padding: '1px 6px' }}>
-                {getRoleLabel(user?.role)}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 px-3">Menu Utama</div>
-          <SidebarLink icon={icons.dashboard} label="Dashboard" active />
-
-          {(user?.role === 'admin' || user?.role === 'tata_usaha') && (
-            <>
-              <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Manajemen Data</div>
-              <SidebarLink icon={icons.students} label="Data Siswa" onClick={() => navigate('/students')} />
-              <SidebarLink icon={icons.teachers} label="Data Guru" onClick={() => navigate('/teachers')} />
-              <SidebarLink icon={icons.classes} label="Data Kelas" onClick={() => navigate('/classes')} />
-              <SidebarLink icon={icons.year} label="Tahun Ajaran" onClick={() => navigate('/academic-years')} />
-              <SidebarLink icon={icons.parents} label="Data Orang Tua" onClick={() => navigate('/parents')} />
-              <SidebarLink icon={icons.qr} label="Cetak QR Gerbang" onClick={handlePrintQR} />
-
-              <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Laporan</div>
-              <SidebarLink icon={icons.report} label="Export & Laporan" onClick={() => navigate('/reports')} />
-
-              {user?.role === 'admin' && (
-                <>
-                  <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Sistem</div>
-                  <SidebarLink icon={icons.settings} label="Pengaturan Sekolah" onClick={() => navigate('/settings')} />
-                </>
-              )}
-              <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Akademik</div>
-              <SidebarLink icon={icons.schedule} label="Jadwal Pelajaran" onClick={() => navigate('/schedules')} />
-              <SidebarLink icon={icons.rekap} label="Mata Pelajaran" onClick={() => navigate('/subjects')} />
-              <SidebarLink icon={icons.calendar} label="Kalender Sekolah" onClick={() => navigate('/holidays')} />
-            </>
-          )}
-
-          {user?.role === 'kepala_sekolah' && (
-            <>
-              <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Laporan & Statistik</div>
-              <SidebarLink icon={icons.report} label="Laporan Kehadiran" onClick={() => navigate('/reports')} />
-            </>
-          )}
-
-          {user?.role === 'wali_kelas' && (
-            <>
-              <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 mt-6 px-3">Kelas Saya</div>
-              <SidebarLink icon={icons.rekap} label="Rekap Kelas" onClick={() => navigate('/reports')} />
-            </>
-          )}
-        </nav>
-
-        {/* Logout */}
-        <div className="p-3 border-t border-white/10">
-          <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-white/50 hover:text-white hover:bg-white/5 transition">
-            {icons.logout}
-            <span>Keluar</span>
-          </button>
-        </div>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} onPrintQR={handlePrintQR} />
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex-1 overflow-y-auto relative" style={{ background: '#F8F9FA' }}>

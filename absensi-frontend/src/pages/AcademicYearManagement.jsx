@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 export default function AcademicYearManagement() {
   const navigate = useNavigate();
@@ -11,7 +12,20 @@ export default function AcademicYearManagement() {
   const [newYear, setNewYear] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [targetYearId, setTargetYearId] = useState('');
+
+  useEffect(() => {
+    if (!showAddModal && !showPromoteModal) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowAddModal(false);
+        setShowPromoteModal(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showAddModal, showPromoteModal]);
 
   useEffect(() => {
     if (user?.role !== 'admin' && user?.role !== 'tata_usaha') {
@@ -39,10 +53,17 @@ export default function AcademicYearManagement() {
         headers: { Authorization: `Bearer ${token}`}
       });
       setNewYear('');
+      setShowAddModal(false);
       fetchYears();
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menambah tahun ajaran');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   const handleActivate = async (id) => {
@@ -79,45 +100,25 @@ export default function AcademicYearManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
+      <AppSidebar user={user} onLogout={handleLogout} />
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 relative bg-gray-50">
+      <div className="max-w-4xl mx-auto space-y-8 pb-10">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Manajemen Tahun Ajaran</h1>
             <p className="text-gray-500 text-sm">Kelola tahun akademik dan proses kenaikan kelas massal.</p>
           </div>
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 text-sm font-bold text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition"
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 text-sm font-bold text-white rounded-md transition"
+            style={{ background: '#800000' }}
           >
-            Kembali
+            Tambah Tahun Ajaran
           </button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Form Tambah */}
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-fit">
-            <h3 className="font-bold text-gray-900 mb-4">Tambah Tahun Ajaran</h3>
-            <form onSubmit={handleAddYear} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Tahun (Format: 2024/2025)</label>
-                <input 
-                  type="text" 
-                  value={newYear}
-                  onChange={(e) => setNewYear(e.target.value)}
-                  placeholder="Contoh: 2025/2026"
-                  required
-                  className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:ring-1 focus:ring-blue-500 outline-none"
-                />
-              </div>
-              <button type="submit" className="w-full bg-maroon text-white py-2 rounded-md text-sm font-bold hover:bg-black transition">
-                Simpan
-              </button>
-            </form>
-          </div>
-
-          {/* List Tahun Ajaran */}
-          <div className="md:col-span-2 space-y-4">
+        <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h3 className="font-bold text-gray-900">Daftar Tahun Ajaran</h3>
               <button 
@@ -166,9 +167,24 @@ export default function AcademicYearManagement() {
                 </tbody>
               </table>
             </div>
-          </div>
         </div>
       </div>
+      </main>
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white w-full max-w-[500px] rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4"><h3 className="font-bold">Tambah Tahun Ajaran</h3><button onClick={() => setShowAddModal(false)}>X</button></div>
+            <form onSubmit={handleAddYear} className="space-y-4">
+              <input type="text" value={newYear} onChange={(e) => setNewYear(e.target.value)} placeholder="Contoh: 2025/2026" required className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm" />
+              <div className="flex justify-end gap-2">
+                <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button>
+                <button type="submit" className="px-4 py-2 rounded-md text-white text-sm font-semibold" style={{ background: '#800000' }}>Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Promosi */}
       {showPromoteModal && (

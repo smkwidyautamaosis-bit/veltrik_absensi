@@ -4,6 +4,7 @@ import axios from 'axios';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import AppSidebar from '../components/AppSidebar';
 
 export default function StudentManagement() {
   const navigate = useNavigate();
@@ -36,6 +37,21 @@ export default function StudentManagement() {
   const [importPreview, setImportPreview] = useState([]);
   const [isImportLoading, setIsImportLoading] = useState(false);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (!showFormModal && !showImportModal && !deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowFormModal(false);
+        setShowImportModal(false);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showFormModal, showImportModal, deleteTarget]);
 
   const fetchStudents = async () => {
     try {
@@ -67,6 +83,12 @@ export default function StudentManagement() {
       fetchClasses();
     }
   }, [user?.role, navigate, token]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -108,8 +130,6 @@ export default function StudentManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus permanen data siswa ini?')) return;
-    
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}`}
@@ -327,8 +347,10 @@ export default function StudentManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-poppins text-gray-900 p-10">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
+      <AppSidebar user={user} onLogout={handleLogout} />
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 relative bg-gray-50">
+      <div className="max-w-6xl mx-auto space-y-8 pb-10">
         
         {/* Header Flat & Minimalis */}
         <div className="flex justify-between items-end pb-6 border-b border-gray-200">
@@ -337,6 +359,18 @@ export default function StudentManagement() {
             <p className="text-gray-500 text-sm mt-1">Kelola master data dan akses sistem siswa.</p>
           </div>
           <div className="flex gap-3">
+            <button 
+              onClick={() => { setFormData({
+                name: '', nisn: '', email: '', password: 'Masuk123',
+                phoneNumber: '', gender: 'Laki-laki', classId: '',
+                studentStatus: 'Aktif', joinDate: new Date().toISOString().split('T')[0],
+                previousSchool: ''
+              }); setShowFormModal(true); }}
+              className="px-4 py-2 text-sm font-semibold text-white rounded-md hover:bg-maroon-dark transition"
+              style={{ background: '#800000' }}
+            >
+              Tambah Siswa
+            </button>
             <button 
               onClick={() => setShowImportModal(true)}
               className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition"
@@ -376,12 +410,6 @@ export default function StudentManagement() {
             >
               Export CSV List
             </button>
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-transparent rounded-md hover:bg-black transition"
-            >
-              Kembali
-            </button>
           </div>
         </div>
 
@@ -389,80 +417,7 @@ export default function StudentManagement() {
         {error && <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-md text-sm font-medium">{error}</div>}
         {success && <div className="bg-green-50 text-green-700 border border-green-200 p-4 rounded-md text-sm font-medium">{success}</div>}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Panel Form (Kiri) */}
-          <div className="bg-white p-6 rounded-md border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider">Tambah Siswa Baru</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">NISN</label>
-                <input type="text" name="nisn" value={formData.nisn} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Kelas & Tingkat</label>
-                <select name="classId" value={formData.classId} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="" disabled>Pilih Kelas</option>
-                  {classes.map(c => (
-                    <option key={c._id} value={c._id}>{c.level} - {c.name} {c.major}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Email (Auto)</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Password</label>
-                <input type="text" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">No. HP</label>
-                  <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Status</label>
-                  <select name="studentStatus" value={formData.studentStatus} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                    <option value="Aktif">Aktif</option>
-                    <option value="Pindahan">Pindahan</option>
-                  </select>
-                </div>
-              </div>
-
-              {formData.studentStatus === 'Pindahan' && (
-                <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tanggal Masuk</label>
-                    <input type="date" name="joinDate" value={formData.joinDate} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Sekolah Asal</label>
-                    <input type="text" name="previousSchool" value={formData.previousSchool} onChange={handleChange} placeholder="Contoh: SMK Negeri 1 Jakarta" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-                  </div>
-                </div>
-              )}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jenis Kelamin</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </div>
-              <div className="pt-2">
-                <button type="submit" disabled={isLoading} className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black transition disabled:bg-gray-400">
-                  {isLoading ? 'Menyimpan...' : 'Simpan Data'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Panel Tabel (Kanan) */}
-          <div className="bg-white rounded-md border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col">
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
               <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Direktori Siswa</h2>
               <span className="text-xs text-gray-500 font-medium">{students.length} Total Data</span>
@@ -492,7 +447,7 @@ export default function StudentManagement() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <button 
-                            onClick={() => handleDelete(student._id)}
+                            onClick={() => setDeleteTarget(student)}
                             className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider transition"
                           >
                             Hapus
@@ -509,9 +464,28 @@ export default function StudentManagement() {
           </div>
 
         </div>
-      </div>
+      </main>
 
       {/* Modal Import */}
+      {showFormModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowFormModal(false)}>
+          <div className="bg-white w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b flex items-center justify-between"><h3 className="font-bold">Tambah Siswa Baru</h3><button onClick={() => setShowFormModal(false)}>X</button></div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-3">
+              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Nama Lengkap" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="text" name="nisn" value={formData.nisn} onChange={handleChange} required placeholder="NISN" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <select name="classId" value={formData.classId} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="" disabled>Pilih Kelas</option>{classes.map(c => <option key={c._id} value={c._id}>{c.level} - {c.name} {c.major}</option>)}</select>
+              <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Email" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="text" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <div className="grid grid-cols-2 gap-2"><input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="No HP" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" /><select name="studentStatus" value={formData.studentStatus} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="Aktif">Aktif</option><option value="Pindahan">Pindahan</option></select></div>
+              {formData.studentStatus === 'Pindahan' && <div className="grid grid-cols-2 gap-2"><input type="date" name="joinDate" value={formData.joinDate} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" /><input type="text" name="previousSchool" value={formData.previousSchool} onChange={handleChange} placeholder="Sekolah Asal" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" /></div>}
+              <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select>
+              <div className="pt-2 flex justify-end gap-2"><button type="button" onClick={() => setShowFormModal(false)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button><button type="submit" disabled={isLoading} className="px-4 py-2 rounded-md text-white text-sm font-semibold" style={{ background: '#800000' }}>{isLoading ? 'Menyimpan...' : 'Simpan'}</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showImportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col max-h-[90vh]">
@@ -643,6 +617,15 @@ export default function StudentManagement() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white w-full max-w-sm rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus {deleteTarget.name}?</p>
+            <div className="flex justify-end gap-2"><button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button><button onClick={async () => { await handleDelete(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button></div>
           </div>
         </div>
       )}

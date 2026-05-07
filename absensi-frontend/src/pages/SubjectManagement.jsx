@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 export default function SubjectManagement() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function SubjectManagement() {
 
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [formData, setFormData] = useState({
     id: null,
     name: '',
@@ -25,6 +27,18 @@ export default function SubjectManagement() {
 
   const levels = ['Semua', 'X', 'XI', 'XII'];
   const majors = ['Semua', 'Perhotelan', 'Tata Boga', 'Pariwisata', 'Perbankan'];
+
+  useEffect(() => {
+    if (!showModal && !deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowModal(false);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showModal, deleteTarget]);
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'tata_usaha')) {
@@ -86,17 +100,15 @@ export default function SubjectManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id, name) => {
-    if (window.confirm(`Yakin ingin menghapus mata pelajaran "${name}"?`)) {
-      try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/subjects/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        alert('Mata pelajaran berhasil dihapus');
-        fetchSubjects();
-      } catch (err) {
-        alert(err.response?.data?.message || 'Gagal menghapus mata pelajaran');
-      }
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/subjects/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert('Mata pelajaran berhasil dihapus');
+      fetchSubjects();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus mata pelajaran');
     }
   };
 
@@ -124,41 +136,16 @@ export default function SubjectManagement() {
     return colors[level] || 'bg-gray-100 text-gray-700';
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0" style={{ background: 'linear-gradient(180deg, #5C0000 0%, #4A0000 100%)' }}>
-        <div className="px-5 py-6 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold text-white tracking-wide leading-tight">VELTRIK</h1>
-            <p className="text-[9px] text-white/40 uppercase tracking-widest font-medium mt-0.5">Absensi Digital</p>
-          </div>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-md transition"
-          >
-            Dashboard
-          </button>
-          
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-wider mb-3 mt-8 px-2">Akademik</div>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-gold bg-white/10 rounded-md transition">
-            Mata Pelajaran
-          </button>
-          <button 
-            onClick={() => navigate('/schedules')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-white/60 hover:text-white hover:bg-white/5 rounded-md transition"
-          >
-            Jadwal Pelajaran
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} />
 
       {/* HEADER MOBILE */}
       <header className="md:hidden bg-maroon-dark px-6 py-4 flex justify-between items-center z-20 shrink-0" style={{ background: 'linear-gradient(135deg, #5C0000, #800000)' }}>
@@ -274,7 +261,7 @@ export default function SubjectManagement() {
                             Edit
                           </button>
                           <button
-                            onClick={() => handleDelete(subj._id, subj.name)}
+                            onClick={() => setDeleteTarget(subj)}
                             className="text-red-600 hover:text-red-800 text-xs font-semibold"
                           >
                             Hapus
@@ -371,6 +358,18 @@ export default function SubjectManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white w-full max-w-sm rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus mata pelajaran "{deleteTarget.name}"?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button>
+              <button onClick={async () => { await handleDelete(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button>
+            </div>
           </div>
         </div>
       )}

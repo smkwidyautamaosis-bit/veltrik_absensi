@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 export default function TeacherManagement() {
   const navigate = useNavigate();
@@ -24,6 +25,20 @@ export default function TeacherManagement() {
     role: 'wali_kelas'
   });
   const [isEditing, setIsEditing] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (!showFormModal && !deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowFormModal(false);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showFormModal, deleteTarget]);
 
   const fetchTeachers = async () => {
     try {
@@ -80,8 +95,6 @@ export default function TeacherManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus permanen data guru ini?')) return;
-    
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/users/${id}`, {
         headers: { Authorization: `Bearer ${token}`}
@@ -92,6 +105,12 @@ export default function TeacherManagement() {
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menghapus data guru.');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   const handleEdit = (teacher) => {
@@ -107,6 +126,7 @@ export default function TeacherManagement() {
       teacherType: teacher.teacherType || 'produktif',
       role: teacher.role || 'wali_kelas'
     });
+    setShowFormModal(true);
   };
 
   const handleExport = () => {
@@ -134,8 +154,10 @@ export default function TeacherManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-poppins text-gray-900 p-10">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
+      <AppSidebar user={user} onLogout={handleLogout} />
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 relative bg-gray-50">
+      <div className="max-w-6xl mx-auto space-y-8 pb-10">
         
         {/* Header Flat & Minimalis */}
         <div className="flex justify-between items-end pb-6 border-b border-gray-200">
@@ -150,11 +172,16 @@ export default function TeacherManagement() {
             >
               Export CSV
             </button>
-            <button 
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 text-sm font-semibold text-white bg-gray-900 border border-transparent rounded-md hover:bg-black transition"
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setFormData({ id: null, name: '', email: '', password: 'Masuk123', nip: '', phoneNumber: '', gender: 'Laki-laki', teacherType: 'produktif', role: 'wali_kelas' });
+                setShowFormModal(true);
+              }}
+              className="px-4 py-2 text-sm font-semibold text-white rounded-md transition"
+              style={{ background: '#800000' }}
             >
-              Kembali
+              Tambah Guru
             </button>
           </div>
         </div>
@@ -163,63 +190,7 @@ export default function TeacherManagement() {
         {error && <div className="bg-red-50 text-red-700 border border-red-200 p-4 rounded-md text-sm font-medium">{error}</div>}
         {success && <div className="bg-green-50 text-green-700 border border-green-200 p-4 rounded-md text-sm font-medium">{success}</div>}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Panel Form (Kiri) */}
-          <div className="bg-white p-6 rounded-md border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider">{isEditing ? 'Edit Data Guru' : 'Tambah Data Baru'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">NIP / NUPTK</label>
-                <input type="text" name="nip" value={formData.nip} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Email</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">No. HP</label>
-                <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Password Login (Default: Masuk123)</label>
-                <input type="text" name="password" value={formData.password} onChange={handleChange} required className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Jenis Kelamin</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Role Pengajar</label>
-                <select name="role" value={formData.role} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="guru">Guru</option>
-                  <option value="wali_kelas">Wali Kelas</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tipe Guru</label>
-                <select name="teacherType" value={formData.teacherType} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
-                  <option value="produktif">Produktif</option>
-                  <option value="tidak_tetap">Tidak Tetap</option>
-                </select>
-              </div>
-              <div className="pt-2">
-                <button type="submit" disabled={isLoading} className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black transition disabled:bg-gray-400">
-                  {isLoading ? 'Menyimpan...' : isEditing ? 'Update Data' : 'Simpan Data'}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Panel Tabel (Kanan) */}
-          <div className="bg-white rounded-md border border-gray-200 lg:col-span-2 overflow-hidden flex flex-col">
+        <div className="bg-white rounded-md border border-gray-200 overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
               <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Direktori Guru</h2>
               <span className="text-xs text-gray-500 font-medium">{teachers.length} Total Data</span>
@@ -260,7 +231,7 @@ export default function TeacherManagement() {
                             Edit
                           </button>
                           <button 
-                            onClick={() => handleDelete(teacher._id)}
+                            onClick={() => setDeleteTarget(teacher)}
                             className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider transition"
                           >
                             Hapus
@@ -277,7 +248,47 @@ export default function TeacherManagement() {
           </div>
 
         </div>
-      </div>
+      </main>
+
+      {showFormModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowFormModal(false)}>
+          <div className="bg-white w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-gray-900">{isEditing ? 'Edit Guru' : 'Tambah Guru'}</h3>
+              <button onClick={() => setShowFormModal(false)}>X</button>
+            </div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4">
+              <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="Nama Lengkap" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="text" name="nip" value={formData.nip} onChange={handleChange} required placeholder="NIP / NUPTK" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="email" name="email" value={formData.email} onChange={handleChange} required placeholder="Email" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required placeholder="No HP" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <input type="text" name="password" value={formData.password} onChange={handleChange} required placeholder="Password" className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md" />
+              <select name="gender" value={formData.gender} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select>
+              <select name="role" value={formData.role} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="guru">Guru</option><option value="wali_kelas">Wali Kelas</option></select>
+              <select name="teacherType" value={formData.teacherType} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md bg-white"><option value="produktif">Produktif</option><option value="tidak_tetap">Tidak Tetap</option></select>
+              <div className="pt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setShowFormModal(false)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button>
+                <button type="submit" disabled={isLoading} className="px-4 py-2 rounded-md text-white text-sm font-semibold" style={{ background: '#800000' }}>
+                  {isLoading ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white w-full max-w-sm rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-gray-900 mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus {deleteTarget.name}?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button>
+              <button onClick={async () => { await handleDelete(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

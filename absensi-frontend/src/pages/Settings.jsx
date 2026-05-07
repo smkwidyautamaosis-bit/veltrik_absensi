@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 const DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const DEFAULT_ACTIVE_DAYS = {
@@ -11,8 +12,10 @@ const DEFAULT_ACTIVE_DAYS = {
 
 export default function Settings() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [user] = useState(() => JSON.parse(localStorage.getItem('user')));
   const token = localStorage.getItem('token');
+  const activeTab = searchParams.get('tab') || 'gps';
 
   const [config, setConfig] = useState({
     school_lat: '',
@@ -35,6 +38,12 @@ export default function Settings() {
     description: '',
   });
 
+  const tabTitleMap = {
+    gps: 'GPS & Radius',
+    'active-days': 'Hari Aktif per Tingkat',
+    pkl: 'Periode PKL',
+  };
+
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'tata_usaha')) {
       navigate('/dashboard');
@@ -42,6 +51,12 @@ export default function Settings() {
     }
     fetchAllData();
   }, [user?.role, token]);
+
+  useEffect(() => {
+    if (!['gps', 'active-days', 'pkl'].includes(activeTab)) {
+      setSearchParams({ tab: 'gps' });
+    }
+  }, [activeTab, setSearchParams]);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -147,6 +162,12 @@ export default function Settings() {
     setPklForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   const handleCreatePKL = async (e) => {
     e.preventDefault();
     setPklSaving(true);
@@ -195,30 +216,7 @@ export default function Settings() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
-        <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
-            <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
-          </div>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            Dashboard
-          </button>
-          
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Sistem</div>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
-            Pengaturan
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} />
 
       {/* HEADER MOBILE */}
       <header className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-20 shrink-0">
@@ -242,7 +240,7 @@ export default function Settings() {
         <div className="max-w-2xl mx-auto pb-10">
           <div className="mb-8 md:mb-10">
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">Pengaturan Sistem</h2>
-            <p className="text-gray-500 text-xs md:text-sm mt-1">Atur konfigurasi GPS, hari aktif tingkat, dan periode PKL kelas XII.</p>
+            <p className="text-gray-500 text-xs md:text-sm mt-1">Section aktif: {tabTitleMap[activeTab] || 'GPS & Radius'}.</p>
           </div>
 
           {message && (
@@ -256,6 +254,7 @@ export default function Settings() {
             </div>
           )}
 
+          {activeTab === 'gps' && (
           <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-8 mb-6">
             <h3 className="text-lg font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Konfigurasi GPS & Radius</h3>
             {loading ? (
@@ -320,29 +319,6 @@ export default function Settings() {
                   <p className="text-[10px] text-gray-500 mt-2">Siswa di luar jarak ini tidak akan bisa melakukan absensi.</p>
                 </div>
 
-                <div className="pt-4 border-t border-gray-100">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">Hari Aktif per Tingkat</h4>
-                  {['X', 'XI', 'XII'].map((level) => (
-                    <div key={level} className="mb-4 p-3 border border-gray-100 rounded-md">
-                      <p className="text-xs font-bold text-gray-700 mb-2">Kelas {level}</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                        {DAYS.map((day) => (
-                          <label key={`${level}-${day}`} className="flex items-center gap-2 text-xs text-gray-700">
-                            <input
-                              type="checkbox"
-                              checked={(config.activeDaysByLevel[level] || []).includes(day)}
-                              onChange={() => toggleActiveDay(level, day)}
-                              className="accent-maroon"
-                            />
-                            {level === 'X' && day === 'Sabtu' ? 'Pramuka' : day}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  <p className="text-[10px] text-gray-500">Sabtu khusus Kelas X ditampilkan sebagai Pramuka.</p>
-                </div>
-
                 <div className="pt-6">
                   <button 
                     type="submit" 
@@ -355,7 +331,43 @@ export default function Settings() {
               </form>
             )}
           </div>
+          )}
 
+          {activeTab === 'active-days' && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-8 mb-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Hari Aktif per Tingkat</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {['X', 'XI', 'XII'].map((level) => (
+                <div key={level} className="mb-4 p-3 border border-gray-100 rounded-md">
+                  <p className="text-xs font-bold text-gray-700 mb-2">Kelas {level}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {DAYS.map((day) => (
+                      <label key={`${level}-${day}`} className="flex items-center gap-2 text-xs text-gray-700">
+                        <input
+                          type="checkbox"
+                          checked={(config.activeDaysByLevel[level] || []).includes(day)}
+                          onChange={() => toggleActiveDay(level, day)}
+                          className="accent-maroon"
+                        />
+                        {level === 'X' && day === 'Sabtu' ? 'Pramuka' : day}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <p className="text-[10px] text-gray-500">Sabtu khusus Kelas X ditampilkan sebagai Pramuka.</p>
+              <button
+                type="submit"
+                disabled={saving}
+                className={`text-white font-semibold rounded-md text-sm px-5 py-2.5 transition ${saving ? 'bg-gray-400 cursor-not-allowed' : 'bg-maroon hover:bg-maroon-dark'}`}
+              >
+                {saving ? 'Menyimpan...' : 'Simpan Hari Aktif'}
+              </button>
+            </form>
+          </div>
+          )}
+
+          {activeTab === 'pkl' && (
           <div className="bg-white border border-gray-200 rounded-lg p-6 md:p-8">
             <h3 className="text-lg font-bold text-gray-900 mb-6 border-b border-gray-100 pb-4">Periode PKL</h3>
 
@@ -463,6 +475,7 @@ export default function Settings() {
               )}
             </div>
           </div>
+          )}
         </div>
       </main>
     </div>

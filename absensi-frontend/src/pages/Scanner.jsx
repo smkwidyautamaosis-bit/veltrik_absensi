@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AppSidebar from '../components/AppSidebar';
 
 export default function Scanner() {
   const [scanResult, setScanResult] = useState(null);
@@ -11,6 +12,7 @@ export default function Scanner() {
   
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     const scanner = new Html5QrcodeScanner('reader', {
@@ -69,8 +71,16 @@ export default function Scanner() {
     );
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
-    <div className="min-h-screen flex flex-col font-poppins text-gray-900" style={{ background: '#F8F9FA' }}>
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
+      <AppSidebar user={user} onLogout={handleLogout} />
+      <div className="min-h-screen flex-1 flex flex-col font-poppins text-gray-900" style={{ background: '#F8F9FA' }}>
       
       {/* Header */}
       <header className="px-5 py-3.5 flex justify-between items-center z-20 shrink-0 text-white" style={{ background: 'linear-gradient(135deg, #5C0000, #800000)' }}>
@@ -155,6 +165,7 @@ export default function Scanner() {
 
         </div>
       </main>
+      </div>
     </div>
   );
 }

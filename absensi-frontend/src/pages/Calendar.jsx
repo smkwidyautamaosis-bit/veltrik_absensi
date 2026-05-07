@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 export default function Calendar() {
   const navigate = useNavigate();
@@ -16,6 +17,18 @@ export default function Calendar() {
   
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [deleteTarget]);
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'tata_usaha')) {
@@ -75,7 +88,6 @@ export default function Calendar() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Anda yakin ingin menghapus hari libur ini?')) return;
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/holidays/${id}`, {
         headers: { Authorization: `Bearer ${token}`}
@@ -86,39 +98,16 @@ export default function Calendar() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
-        <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
-            <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
-          </div>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            Dashboard
-          </button>
-          
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Sistem</div>
-          <button 
-            onClick={() => navigate('/settings')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            Pengaturan
-          </button>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
-            Kalender Sekolah
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} />
 
       {/* HEADER MOBILE */}
       <header className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-20 shrink-0">
@@ -200,7 +189,7 @@ export default function Calendar() {
                             <td className="px-5 py-3 text-xs">{h.description}</td>
                             <td className="px-5 py-3 text-right">
                               <button 
-                                onClick={() => handleDelete(h._id)}
+                                onClick={() => setDeleteTarget(h)}
                                 className="text-[10px] font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-md transition"
                               >
                                 Hapus
@@ -257,6 +246,15 @@ export default function Calendar() {
 
         </div>
       </main>
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white rounded-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus libur "{deleteTarget.description}"?</p>
+            <div className="flex justify-end gap-2"><button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button><button onClick={async () => { await handleDelete(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

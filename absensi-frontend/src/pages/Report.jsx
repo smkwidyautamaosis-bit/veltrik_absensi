@@ -4,6 +4,7 @@ import axios from 'axios';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import AppSidebar from '../components/AppSidebar';
 
 export default function Report() {
   const navigate = useNavigate();
@@ -22,6 +23,12 @@ export default function Report() {
   });
   
   const [loading, setLoading] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
 
   useEffect(() => {
     if (!user || !['admin', 'tata_usaha', 'kepala_sekolah', 'wali_kelas'].includes(user.role)) {
@@ -207,30 +214,7 @@ export default function Report() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
-        <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
-            <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
-          </div>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            Dashboard
-          </button>
-          
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Laporan</div>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
-            Export & Laporan
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} />
 
       {/* HEADER MOBILE */}
       <header className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-20 shrink-0">

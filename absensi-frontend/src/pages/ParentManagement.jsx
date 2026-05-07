@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { useNavigate } from 'react-router-dom';
+import AppSidebar from '../components/AppSidebar';
 
 export default function ParentManagement() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem('user'));
   const [parents, setParents] = useState([]);
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
@@ -25,6 +29,20 @@ export default function ParentManagement() {
 
   // Children count cache
   const [childrenCounts, setChildrenCounts] = useState({});
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (!showModal && !showAddModal && !deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowModal(false);
+        setShowAddModal(false);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showModal, showAddModal, deleteTarget]);
 
   useEffect(() => {
     fetchParents();
@@ -90,8 +108,7 @@ export default function ParentManagement() {
   };
 
   // === HAPUS ORANG TUA ===
-  const handleDeleteParent = async (parentId, parentName) => {
-    if (!window.confirm(`Yakin ingin menghapus akun orang tua "${parentName}"?\nSemua tautan ke anak akan dilepaskan.`)) return;
+  const handleDeleteParent = async (parentId) => {
     try {
       await axios.delete(`${import.meta.env.VITE_API_URL}/api/parents/${parentId}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -102,6 +119,12 @@ export default function ParentManagement() {
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal menghapus akun orang tua');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   // === KELOLA ANAK ===
@@ -229,7 +252,10 @@ export default function ParentManagement() {
   ).slice(0, 5);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
+      <AppSidebar user={user} onLogout={handleLogout} />
+      <main className="flex-1 overflow-y-auto p-6 md:p-10 relative bg-gray-50">
+    <div className="max-w-6xl mx-auto space-y-6 pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
         <div>
@@ -294,7 +320,7 @@ export default function ParentManagement() {
                           Kelola Anak
                         </button>
                         <button 
-                          onClick={() => handleDeleteParent(p._id, p.name)}
+                          onClick={() => setDeleteTarget(p)}
                           className="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition"
                         >
                           Hapus
@@ -462,6 +488,20 @@ export default function ParentManagement() {
           </div>
         </div>
       )}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white w-full max-w-sm rounded-xl p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-gray-900 mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus {deleteTarget.name}?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button>
+              <button onClick={async () => { await handleDeleteParent(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+    </main>
     </div>
   );
 }

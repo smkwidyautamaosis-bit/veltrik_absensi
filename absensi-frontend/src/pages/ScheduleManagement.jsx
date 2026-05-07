@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import AppSidebar from '../components/AppSidebar';
 
 export default function ScheduleManagement() {
   const navigate = useNavigate();
@@ -31,6 +32,20 @@ export default function ScheduleManagement() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (!showFormModal && !deleteTarget) return;
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setShowFormModal(false);
+        setDeleteTarget(null);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showFormModal, deleteTarget]);
 
   const daysOfWeek = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
@@ -90,6 +105,7 @@ export default function ScheduleManagement() {
       }
       setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '', meetingType: 'teori' });
       setIsEditing(false);
+      setShowFormModal(false);
       fetchData();
     } catch (err) {
       alert(err.response?.data?.error || 'Gagal menyimpan jadwal');
@@ -108,49 +124,31 @@ export default function ScheduleManagement() {
       endTime: sched.endTime,
       meetingType: sched.meetingType || 'teori'
     });
+    setShowFormModal(true);
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Yakin ingin menghapus jadwal ini?')) {
-      try {
-        await axios.delete(`${import.meta.env.VITE_API_URL}/api/schedules/${id}`, {
-          headers: { Authorization: `Bearer ${token}`}
-        });
-        alert('Jadwal berhasil dihapus');
-        fetchData();
-      } catch (err) {
-        alert(err.response?.data?.error || 'Gagal menghapus jadwal');
-      }
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/api/schedules/${id}`, {
+        headers: { Authorization: `Bearer ${token}`}
+      });
+      alert('Jadwal berhasil dihapus');
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Gagal menghapus jadwal');
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
   };
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-50 font-poppins text-gray-900 overflow-hidden">
       
-      {/* SIDEBAR */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-gray-200 flex-col z-10 shrink-0">
-        <div className="px-6 py-8 border-b border-gray-100 flex items-center gap-3">
-          <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain" />
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight text-maroon leading-tight">SMK Widya Utama</h1>
-            <p className="text-[10px] text-gray-500 mt-0.5 uppercase tracking-wider font-semibold">Sistem Absensi</p>
-          </div>
-        </div>
-        
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition"
-          >
-            Dashboard
-          </button>
-          
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 mt-8 px-2">Akademik</div>
-          <button className="w-full text-left px-3 py-2 text-sm font-semibold text-maroon bg-blue-50/50 rounded-md transition">
-            Jadwal Pelajaran
-          </button>
-        </nav>
-      </aside>
+      <AppSidebar user={user} onLogout={handleLogout} />
 
       {/* HEADER MOBILE */}
       <header className="md:hidden bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-20 shrink-0">
@@ -178,134 +176,8 @@ export default function ScheduleManagement() {
             <p className="text-gray-500 text-xs md:text-sm mt-1">Atur jadwal mengajar guru untuk semua kelas.</p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-5 md:p-6 mb-8">
-            <h3 className="text-sm font-bold text-gray-900 mb-4">{isEditing ? 'Edit Jadwal' : 'Tambah Jadwal Baru'}</h3>
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              <div>
-                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Mata Pelajaran</label>
-                <select 
-                  name="subject"
-                  value={formData.subject}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                >
-                  <option value="">-- Pilih Mata Pelajaran --</option>
-                  {subjects.map(s => (
-                    <option key={s._id} value={s.name}>{s.name}{s.code ? ` (${s.code})` : ''}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Tipe Pertemuan</label>
-                <select 
-                  name="meetingType"
-                  value={formData.meetingType}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                >
-                  {meetingTypes.map(mt => (
-                    <option key={mt.value} value={mt.value}>{mt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Pilih Kelas</label>
-                <select 
-                  name="classId"
-                  value={formData.classId}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                >
-                  <option value="">-- Pilih Kelas --</option>
-                  {classes.map(c => (
-                    <option key={c._id} value={c._id}>{c.name} {c.major} ({c.academicYear})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Pilih Guru</label>
-                <select 
-                  name="teacher"
-                  value={formData.teacher}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                >
-                  <option value="">-- Pilih Guru --</option>
-                  {teachers.map(t => (
-                    <option key={t._id} value={t._id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Hari</label>
-                <select 
-                  name="dayOfWeek"
-                  value={formData.dayOfWeek}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                >
-                  {daysOfWeek.map(day => (
-                    <option key={day} value={day}>{day}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Jam Mulai</label>
-                  <input 
-                    type="time" 
-                    name="startTime"
-                    value={formData.startTime}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-[10px] font-bold text-gray-700 uppercase tracking-wider mb-1.5">Jam Selesai</label>
-                  <input 
-                    type="time" 
-                    name="endTime"
-                    value={formData.endTime}
-                    onChange={handleChange}
-                    required
-                    className="w-full bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-md focus:ring-maroon focus:border-maroon p-2.5 transition"
-                  />
-                </div>
-              </div>
-
-              <div className="md:col-span-2 flex justify-end gap-2 mt-4">
-                {isEditing && (
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      setIsEditing(false);
-                      setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '', meetingType: 'teori' });
-                    }}
-                    className="text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-md transition"
-                  >
-                    Batal
-                  </button>
-                )}
-                <button 
-                  type="submit" 
-                  className="text-xs font-bold text-white bg-maroon hover:bg-maroon-dark px-6 py-2.5 rounded-md transition"
-                >
-                  {isEditing ? 'Simpan Perubahan' : 'Tambah Jadwal'}
-                </button>
-              </div>
-
-            </form>
+          <div className="mb-6">
+            <button onClick={() => { setIsEditing(false); setFormData({ id: null, teacher: '', classId: '', subject: '', dayOfWeek: 'Senin', startTime: '', endTime: '', meetingType: 'teori' }); setShowFormModal(true); }} className="text-xs font-bold text-white bg-maroon hover:bg-maroon-dark px-6 py-2.5 rounded-md transition">Tambah Jadwal</button>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -359,7 +231,7 @@ export default function ScheduleManagement() {
                             Edit
                           </button>
                           <button 
-                            onClick={() => handleDelete(sched._id)}
+                            onClick={() => setDeleteTarget(sched)}
                             className="text-red-600 hover:text-red-800 text-xs font-semibold"
                           >
                             Hapus
@@ -375,6 +247,33 @@ export default function ScheduleManagement() {
 
         </div>
       </main>
+
+      {showFormModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowFormModal(false)}>
+          <div className="bg-white w-full max-w-[500px] max-h-[90vh] overflow-y-auto rounded-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b flex items-center justify-between"><h3 className="font-bold">{isEditing ? 'Edit Jadwal' : 'Tambah Jadwal'}</h3><button onClick={() => setShowFormModal(false)}>X</button></div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-3">
+              <select name="subject" value={formData.subject} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5"><option value="">-- Pilih Mata Pelajaran --</option>{subjects.map(s => <option key={s._id} value={s.name}>{s.name}{s.code ? ` (${s.code})` : ''}</option>)}</select>
+              <select name="meetingType" value={formData.meetingType} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5">{meetingTypes.map(mt => <option key={mt.value} value={mt.value}>{mt.label}</option>)}</select>
+              <select name="classId" value={formData.classId} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5"><option value="">-- Pilih Kelas --</option>{classes.map(c => <option key={c._id} value={c._id}>{c.name} {c.major} ({c.academicYear})</option>)}</select>
+              <select name="teacher" value={formData.teacher} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5"><option value="">-- Pilih Guru --</option>{teachers.map(t => <option key={t._id} value={t._id}>{t.name}</option>)}</select>
+              <select name="dayOfWeek" value={formData.dayOfWeek} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5">{daysOfWeek.map(day => <option key={day} value={day}>{day}</option>)}</select>
+              <div className="grid grid-cols-2 gap-2"><input type="time" name="startTime" value={formData.startTime} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5" /><input type="time" name="endTime" value={formData.endTime} onChange={handleChange} required className="w-full bg-gray-50 border border-gray-200 text-sm rounded-md p-2.5" /></div>
+              <div className="pt-2 flex justify-end gap-2"><button type="button" onClick={() => setShowFormModal(false)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button><button type="submit" className="px-4 py-2 rounded-md text-white text-sm font-semibold" style={{ background: '#800000' }}>Simpan</button></div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-white rounded-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <h4 className="font-bold mb-2">Konfirmasi Hapus</h4>
+            <p className="text-sm text-gray-600 mb-4">Yakin ingin menghapus jadwal {deleteTarget.subject}?</p>
+            <div className="flex justify-end gap-2"><button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-gray-100 text-sm font-semibold">Batal</button><button onClick={async () => { await handleDelete(deleteTarget._id); setDeleteTarget(null); }} className="px-4 py-2 rounded-md bg-red-600 text-white text-sm font-semibold">Ya, Hapus</button></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
