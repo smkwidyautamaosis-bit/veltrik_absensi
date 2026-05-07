@@ -8,10 +8,10 @@ const router = express.Router();
 router.use(protect);
 
 // Siswa melakukan check-in (melewati validasi waktu dan hari libur)
-router.post('/checkin', authorize('siswa'), checkTimeLimit, checkHoliday, checkIn);
+router.post('/checkin', authorize('siswa', 'guru', 'wali_kelas'), checkTimeLimit, checkHoliday, checkIn);
 
-// Siswa melihat riwayatnya sendiri
-router.get('/history', authorize('siswa'), getHistory);
+// Pengguna melihat riwayat absensinya sendiri
+router.get('/history', authorize('siswa', 'guru', 'wali_kelas'), getHistory);
 
 // Admin / Guru melihat absensi hari ini untuk dashboard
 router.get('/today', authorize('admin', 'tata_usaha', 'wali_kelas'), getTodayAttendance);

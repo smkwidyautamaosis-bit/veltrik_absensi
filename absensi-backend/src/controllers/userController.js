@@ -21,7 +21,7 @@ exports.getUsers = async (req, res, next) => {
 // @route   POST /api/users
 exports.createUser = async (req, res, next) => {
   try {
-    const { name, email, password, role, nisn, classId, gender, phoneNumber, address } = req.body;
+    const { name, email, password, role, nisn, classId, gender, phoneNumber, address, teacherType } = req.body;
     
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -36,7 +36,7 @@ exports.createUser = async (req, res, next) => {
     }
 
     const user = await User.create({
-      name, email, password, role, nisn, classId, gender, phoneNumber, address
+      name, email, password, role, nisn, classId, gender, phoneNumber, address, teacherType
     });
 
     res.status(201).json({ success: true, message: 'User berhasil dibuat', data: user });

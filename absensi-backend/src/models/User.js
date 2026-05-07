@@ -28,6 +28,20 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'kepala_sekolah', 'wali_kelas', 'tata_usaha', 'guru', 'siswa', 'orang_tua'],
       default: 'siswa',
     },
+    teacherType: {
+      type: String,
+      enum: ['produktif', 'tidak_tetap'],
+      default: function () {
+        return this.role === 'guru' || this.role === 'wali_kelas' ? 'produktif' : undefined;
+      },
+      validate: {
+        validator: function (value) {
+          if (this.role === 'guru' || this.role === 'wali_kelas') return !!value;
+          return true;
+        },
+        message: 'Tipe guru hanya berlaku untuk role guru atau wali_kelas',
+      },
+    },
     nisn: {
       type: String,
       unique: true,

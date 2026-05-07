@@ -13,20 +13,25 @@ export default function TeacherManagement() {
   const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
+    id: null,
     name: '',
     email: '',
     password: 'Masuk123',
     nip: '',
     phoneNumber: '',
-    gender: 'Laki-laki'
+    gender: 'Laki-laki',
+    teacherType: 'produktif',
+    role: 'wali_kelas'
   });
+  const [isEditing, setIsEditing] = useState(false);
 
   const fetchTeachers = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=wali_kelas`, {
-        headers: { Authorization: `Bearer ${token}`}
-      });
-      setTeachers(response.data.data);
+      const [guruRes, waliRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=guru`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${import.meta.env.VITE_API_URL}/api/users?role=wali_kelas`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setTeachers([...(guruRes.data.data || []), ...(waliRes.data.data || [])]);
     } catch (err) {
       console.error('Gagal mengambil data guru', err);
     }
@@ -51,11 +56,19 @@ export default function TeacherManagement() {
     setSuccess('');
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, { ...formData, role: 'wali_kelas' }, {
-        headers: { Authorization: `Bearer ${token}`}
-      });
-      setSuccess('Data guru berhasil ditambahkan.');
-      setFormData({ name: '', email: '', password: 'Masuk123', nip: '', phoneNumber: '', gender: 'Laki-laki' });
+      if (isEditing) {
+        await axios.put(`${import.meta.env.VITE_API_URL}/api/users/${formData.id}`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuccess('Data guru berhasil diperbarui.');
+      } else {
+        await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, formData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuccess('Data guru berhasil ditambahkan.');
+      }
+      setFormData({ id: null, name: '', email: '', password: 'Masuk123', nip: '', phoneNumber: '', gender: 'Laki-laki', teacherType: 'produktif', role: 'wali_kelas' });
+      setIsEditing(false);
       fetchTeachers(); 
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -79,6 +92,21 @@ export default function TeacherManagement() {
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal menghapus data guru.');
     }
+  };
+
+  const handleEdit = (teacher) => {
+    setIsEditing(true);
+    setFormData({
+      id: teacher._id,
+      name: teacher.name || '',
+      email: teacher.email || '',
+      password: 'Masuk123',
+      nip: teacher.nip || '',
+      phoneNumber: teacher.phoneNumber || '',
+      gender: teacher.gender || 'Laki-laki',
+      teacherType: teacher.teacherType || 'produktif',
+      role: teacher.role || 'wali_kelas'
+    });
   };
 
   const handleExport = () => {
@@ -139,7 +167,7 @@ export default function TeacherManagement() {
           
           {/* Panel Form (Kiri) */}
           <div className="bg-white p-6 rounded-md border border-gray-200 lg:col-span-1 h-fit">
-            <h2 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider">Tambah Data Baru</h2>
+            <h2 className="text-sm font-bold text-gray-900 mb-6 uppercase tracking-wider">{isEditing ? 'Edit Data Guru' : 'Tambah Data Baru'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
@@ -168,9 +196,23 @@ export default function TeacherManagement() {
                   <option value="Perempuan">Perempuan</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Role Pengajar</label>
+                <select name="role" value={formData.role} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
+                  <option value="guru">Guru</option>
+                  <option value="wali_kelas">Wali Kelas</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">Tipe Guru</label>
+                <select name="teacherType" value={formData.teacherType} onChange={handleChange} className="w-full px-3 py-2 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-900 focus:border-gray-900 transition bg-white">
+                  <option value="produktif">Produktif</option>
+                  <option value="tidak_tetap">Tidak Tetap</option>
+                </select>
+              </div>
               <div className="pt-2">
                 <button type="submit" disabled={isLoading} className="w-full bg-gray-900 text-white py-2.5 rounded-md text-sm font-semibold hover:bg-black transition disabled:bg-gray-400">
-                  {isLoading ? 'Menyimpan...' : 'Simpan Data'}
+                  {isLoading ? 'Menyimpan...' : isEditing ? 'Update Data' : 'Simpan Data'}
                 </button>
               </div>
             </form>
@@ -189,6 +231,7 @@ export default function TeacherManagement() {
                   <tr>
                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama</th>
                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">NIP</th>
+                    <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Role / Tipe</th>
                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Kontak</th>
                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
                   </tr>
@@ -199,6 +242,10 @@ export default function TeacherManagement() {
                       <tr key={teacher._id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{teacher.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-gray-500 font-mono text-xs">{teacher.nip}</td>
+                        <td className="px-6 py-4 text-xs">
+                          <span className="font-semibold text-gray-800">{teacher.role}</span>
+                          <div className="text-gray-500">{teacher.teacherType || 'produktif'}</div>
+                        </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="text-gray-500">{teacher.email}</span>
@@ -206,6 +253,12 @@ export default function TeacherManagement() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
+                          <button 
+                            onClick={() => handleEdit(teacher)}
+                            className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase tracking-wider transition mr-3"
+                          >
+                            Edit
+                          </button>
                           <button 
                             onClick={() => handleDelete(teacher._id)}
                             className="text-red-600 hover:text-red-800 text-xs font-bold uppercase tracking-wider transition"
@@ -216,7 +269,7 @@ export default function TeacherManagement() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan="4" className="px-6 py-12 text-center text-sm text-gray-500">Belum ada data guru terdaftar.</td></tr>
+                    <tr><td colSpan="5" className="px-6 py-12 text-center text-sm text-gray-500">Belum ada data guru terdaftar.</td></tr>
                   )}
                 </tbody>
               </table>

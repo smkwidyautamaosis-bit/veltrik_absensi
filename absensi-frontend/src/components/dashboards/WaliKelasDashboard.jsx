@@ -4,8 +4,10 @@ import { io } from 'socket.io-client';
 
 export default function WaliKelasDashboard() {
   const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
   const [attendances, setAttendances] = useState([]);
   const [permissions, setPermissions] = useState([]);
+  const [mySchedules, setMySchedules] = useState([]);
   const [activeTab, setActiveTab] = useState('monitor');
 
   useEffect(() => {
@@ -20,6 +22,13 @@ export default function WaliKelasDashboard() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setPermissions(resPerm.data.data);
+
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const todayStr = days[new Date().getDay()];
+        const resSchedule = await axios.get(`${import.meta.env.VITE_API_URL}/api/schedules?teacher=${user?._id}&dayOfWeek=${todayStr}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMySchedules(resSchedule.data.data || []);
       } catch (err) {
         console.error('Error fetching class data', err);
       }
@@ -31,7 +40,7 @@ export default function WaliKelasDashboard() {
       setAttendances((prev) => [newRecord, ...prev]);
     });
     return () => socket.disconnect();
-  }, [token]);
+  }, [token, user?._id]);
 
   const handleUpdateStatus = async (id, newStatus) => {
     try {
@@ -101,8 +110,8 @@ export default function WaliKelasDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {attendances.length > 0 ? (
-                  attendances.map((record) => (
+                {attendances.filter((record) => (record.userRole || 'siswa') === 'siswa').length > 0 ? (
+                  attendances.filter((record) => (record.userRole || 'siswa') === 'siswa').map((record) => (
                     <tr key={record._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-5 py-3.5 text-xs font-medium text-gray-500">{new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
                       <td className="px-5 py-3.5 font-semibold text-gray-900 text-sm">{record.student?.name}</td>
@@ -213,6 +222,28 @@ export default function WaliKelasDashboard() {
           </div>
         </div>
       )}
+
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Jadwal Mengajar Saya Hari Ini</h2>
+        </div>
+        <div className="p-5">
+          {mySchedules.length === 0 ? (
+            <p className="text-sm text-gray-400">Tidak ada jadwal mengajar hari ini.</p>
+          ) : (
+            <div className="space-y-2">
+              {mySchedules.map((sched) => (
+                <div key={sched._id} className="border border-gray-100 rounded-lg px-4 py-3">
+                  <p className="text-sm font-bold text-gray-900">{sched.subject}</p>
+                  <p className="text-xs text-gray-500">
+                    {sched.startTime} - {sched.endTime} | {sched.classId ? `${sched.classId.name} ${sched.classId.major}` : '-'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

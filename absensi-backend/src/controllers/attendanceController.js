@@ -4,18 +4,45 @@ const Holiday = require('../models/Holiday');
 const { calculateDistance } = require('../utils/haversine');
 const { sendNotification } = require('../utils/notificationService');
 const User = require('../models/User');
+const Schedule = require('../models/Schedule');
 
 // Default config if not found
 const DEFAULT_LAT = -6.2088;
 const DEFAULT_LNG = 106.8456;
 const DEFAULT_RADIUS = 50;
+const TEACHING_ROLES = ['guru', 'wali_kelas'];
+
+const getAttendanceLookup = (user) => {
+  if (user.role === 'siswa') {
+    return { $or: [{ student: user._id }, { user: user._id }] };
+  }
+  if (TEACHING_ROLES.includes(user.role)) {
+    return { user: user._id, userRole: user.role };
+  }
+  return { user: user._id };
+};
+
+const getDayName = (date = new Date()) => {
+  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  return days[date.getDay()];
+};
+
+const isWeekday = (date = new Date()) => {
+  const day = date.getDay();
+  return day >= 1 && day <= 5;
+};
 
 // @desc    Proses Check-In Siswa
 // @route   POST /api/attendance/checkin
 exports.checkIn = async (req, res, next) => {
   try {
     const { qrToken, lat, lng } = req.body;
-    const studentId = req.user.id; 
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    if (!['siswa', 'guru', 'wali_kelas'].includes(userRole)) {
+      return res.status(403).json({ success: false, message: 'Role Anda tidak diizinkan melakukan absensi QR.' });
+    }
 
     // 0. Validasi Hari Libur (Akhir Pekan & Libur Sekolah)
     // Sesuaikan timezone WIB (UTC+7)
@@ -53,13 +80,13 @@ exports.checkIn = async (req, res, next) => {
 
     const distance = calculateDistance(lat, lng, schoolLat, schoolLng);
     if (distance > maxRadius) {
-      // Notifikasi ke Admin (Opsional: Wali Kelas kalau tau)
+      // Notifikasi ke Admin jika ada percobaan dari luar radius
       const admins = await User.find({ role: 'admin' });
       for (const admin of admins) {
         sendNotification({
           recipient: admin._id,
           title: 'Percobaan Absen Luar Radius',
-          message: `Siswa mencoba absen dari luar radius sekolah (${Math.round(distance)}m)`,
+          message: `${req.user.name} mencoba absen dari luar radius sekolah (${Math.round(distance)}m)`,
           type: 'warning'
         });
       }
@@ -72,7 +99,10 @@ exports.checkIn = async (req, res, next) => {
 
     // 3. Validasi Double Attendance
     const today = new Date().toISOString().split('T')[0];
-    const existingAttendance = await Attendance.findOne({ student: studentId, date: today });
+    const existingAttendance = await Attendance.findOne({
+      date: today,
+      ...getAttendanceLookup(req.user),
+    });
     
     if (existingAttendance) {
       return res.status(400).json({ success: false, message: 'Anda sudah melakukan absensi hari ini' });
@@ -87,7 +117,9 @@ exports.checkIn = async (req, res, next) => {
 
     // 5. Simpan Absensi
     const attendance = await Attendance.create({
-      student: studentId,
+      student: userRole === 'siswa' ? userId : undefined,
+      user: userId,
+      userRole,
       date: today,
       checkIn: now,
       status,
@@ -95,7 +127,9 @@ exports.checkIn = async (req, res, next) => {
       distance: Math.round(distance),
     });
 
-    const populatedAttendance = await Attendance.findById(attendance._id).populate('student', 'name nisn classId');
+    const populatedAttendance = await Attendance.findById(attendance._id)
+      .populate('student', 'name nisn classId')
+      .populate('user', 'name role');
 
     // Emit event realtime ke dashboard
     const io = req.app.get('io');
@@ -103,7 +137,7 @@ exports.checkIn = async (req, res, next) => {
 
     // Kirim notifikasi ke Siswa
     sendNotification({
-      recipient: studentId,
+      recipient: userId,
       title: 'Absensi Berhasil',
       message: `Anda telah berhasil melakukan absen masuk hari ini dengan status: ${status}`,
       type: 'success',
@@ -134,7 +168,8 @@ exports.checkIn = async (req, res, next) => {
 // @route   GET /api/attendance/history
 exports.getHistory = async (req, res, next) => {
   try {
-    const history = await Attendance.find({ student: req.user.id }).sort({ checkIn: -1 });
+    const history = await Attendance.find(getAttendanceLookup(req.user))
+      .sort({ checkIn: -1 });
     res.status(200).json({ success: true, data: history });
   } catch (error) {
     next(error);
@@ -148,6 +183,7 @@ exports.getTodayAttendance = async (req, res, next) => {
     const today = new Date().toISOString().split('T')[0];
     const attendances = await Attendance.find({ date: today })
       .populate('student', 'name nisn classId')
+      .populate('user', 'name role')
       .sort({ checkIn: -1 });
       
     res.status(200).json({ success: true, count: attendances.length, data: attendances });
@@ -224,7 +260,9 @@ exports.updateAttendanceStatus = async (req, res, next) => {
     attendance.status = status;
     await attendance.save();
 
-    const populatedAttendance = await Attendance.findById(attendance._id).populate('student', 'name nisn classId');
+    const populatedAttendance = await Attendance.findById(attendance._id)
+      .populate('student', 'name nisn classId')
+      .populate('user', 'name role');
 
     // Beritahu frontend via socket bahwa ada update
     const io = req.app.get('io');
@@ -240,8 +278,8 @@ exports.updateAttendanceStatus = async (req, res, next) => {
 // @route   POST /api/attendance/generate-alpa
 exports.generateAlpa = async (req, res, next) => {
   try {
-    const User = require('../models/User'); // Import User locally untuk hindari circular dependency
     const today = new Date().toISOString().split('T')[0];
+    const todayDate = new Date();
 
     // Ambil semua ID siswa aktif yang sudah masuk (joinDate <= today)
     const todayObj = new Date(today);
@@ -256,20 +294,51 @@ exports.generateAlpa = async (req, res, next) => {
     }).select('_id');
     const studentIds = students.map(s => s._id.toString());
 
+    // Guru produktif auto-alpa global setiap Senin-Jumat
+    let produktifTeacherIds = [];
+    if (isWeekday(todayDate)) {
+      const produktifTeachers = await User.find({
+        role: { $in: TEACHING_ROLES },
+        $or: [{ teacherType: 'produktif' }, { teacherType: { $exists: false } }],
+      }).select('_id');
+      produktifTeacherIds = produktifTeachers.map(t => t._id.toString());
+    }
+
+    // Guru tidak tetap auto-alpa hanya jika punya jadwal mengajar hari ini
+    const todayDayName = getDayName(todayDate);
+    const scheduledTeacherIds = await Schedule.distinct('teacher', { dayOfWeek: todayDayName });
+    const scheduledTeacherIdsAsString = scheduledTeacherIds.map((id) => id.toString());
+    const tidakTetapTeachers = await User.find({
+      _id: { $in: scheduledTeacherIdsAsString },
+      role: { $in: TEACHING_ROLES },
+      teacherType: 'tidak_tetap',
+    }).select('_id role');
+    const tidakTetapTeacherIds = tidakTetapTeachers.map((t) => t._id.toString());
+
+    const targetTeacherIds = [...new Set([...produktifTeacherIds, ...tidakTetapTeacherIds])];
+
     // Ambil semua absensi hari ini
-    const todayAttendances = await Attendance.find({ date: today }).select('student');
-    const presentStudentIds = todayAttendances.map(a => a.student.toString());
+    const todayAttendances = await Attendance.find({ date: today }).select('student user userRole');
+    const presentStudentIds = todayAttendances
+      .filter((a) => a.student)
+      .map((a) => a.student.toString());
+    const presentTeacherIds = todayAttendances
+      .filter((a) => a.user && TEACHING_ROLES.includes(a.userRole))
+      .map((a) => a.user.toString());
 
     // Cari siswa yang tidak ada di daftar absensi hari ini
     const absentStudentIds = studentIds.filter(id => !presentStudentIds.includes(id));
+    const absentTeacherIds = targetTeacherIds.filter((id) => !presentTeacherIds.includes(id));
 
-    if (absentStudentIds.length === 0) {
-      return res.status(200).json({ success: true, message: 'Semua siswa sudah memiliki data absensi hari ini.' });
+    if (absentStudentIds.length === 0 && absentTeacherIds.length === 0) {
+      return res.status(200).json({ success: true, message: 'Semua target absensi sudah memiliki data hari ini.' });
     }
 
-    // Buat data alpa massal
-    const alpaRecords = absentStudentIds.map(id => ({
+    // Buat data alpa massal siswa
+    const studentAlpaRecords = absentStudentIds.map(id => ({
       student: id,
+      user: id,
+      userRole: 'siswa',
       date: today,
       checkIn: new Date(),
       status: 'alfa',
@@ -277,7 +346,19 @@ exports.generateAlpa = async (req, res, next) => {
       distance: 0
     }));
 
-    await Attendance.insertMany(alpaRecords);
+    // Buat data alpa massal guru/wali kelas
+    const teacherUsers = await User.find({ _id: { $in: absentTeacherIds } }).select('_id role');
+    const teacherAlpaRecords = teacherUsers.map((teacher) => ({
+      user: teacher._id,
+      userRole: teacher.role,
+      date: today,
+      checkIn: new Date(),
+      status: 'alfa',
+      location: { lat: 0, lng: 0 },
+      distance: 0,
+    }));
+
+    await Attendance.insertMany([...studentAlpaRecords, ...teacherAlpaRecords]);
 
     // Kirim Notifikasi ke Wali Kelas
     const absentStudentsDetail = await User.find({ _id: { $in: absentStudentIds } }).populate('classId');
@@ -317,8 +398,12 @@ exports.generateAlpa = async (req, res, next) => {
 
     res.status(201).json({ 
       success: true, 
-      message: `${absentStudentIds.length} siswa berhasil ditandai Alpa.`,
-      count: absentStudentIds.length 
+      message: `${absentStudentIds.length} siswa dan ${absentTeacherIds.length} guru/wali kelas berhasil ditandai Alpa.`,
+      count: {
+        siswa: absentStudentIds.length,
+        guru: absentTeacherIds.length,
+        total: absentStudentIds.length + absentTeacherIds.length,
+      }
     });
   } catch (error) {
     if (next) next(error);

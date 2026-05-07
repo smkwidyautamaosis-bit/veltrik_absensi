@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [qrToken, setQrToken] = useState('');
   const [attendances, setAttendances] = useState([]);
   const [stats, setStats] = useState({ totalUsers: 0, totalClasses: 0 });
-  const [todayStats, setTodayStats] = useState({ hadir: 0, telat: 0, alpa: 0, izinSakit: 0 });
+  const [todayStats, setTodayStats] = useState({ hadir: 0, telat: 0, alpa: 0, izinSakit: 0, guruTotal: 0 });
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,11 +23,13 @@ export default function AdminDashboard() {
         setAttendances(data);
 
         // Hitung statistik hari ini
-        const hadir = data.filter(a => a.status === 'hadir').length;
-        const telat = data.filter(a => a.status === 'telat').length;
-        const alpa = data.filter(a => a.status === 'alfa').length;
-        const izinSakit = data.filter(a => a.status === 'izin' || a.status === 'sakit').length;
-        setTodayStats({ hadir, telat, alpa, izinSakit });
+        const studentRecords = data.filter(a => (a.userRole || 'siswa') === 'siswa');
+        const teacherRecords = data.filter(a => ['guru', 'wali_kelas'].includes(a.userRole));
+        const hadir = studentRecords.filter(a => a.status === 'hadir').length;
+        const telat = studentRecords.filter(a => a.status === 'telat').length;
+        const alpa = studentRecords.filter(a => a.status === 'alfa').length;
+        const izinSakit = studentRecords.filter(a => a.status === 'izin' || a.status === 'sakit').length;
+        setTodayStats({ hadir, telat, alpa, izinSakit, guruTotal: teacherRecords.length });
 
         const userRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/users`, { headers: { Authorization: `Bearer ${token}` } });
         const classRes = await axios.get(`${import.meta.env.VITE_API_URL}/api/classes`, { headers: { Authorization: `Bearer ${token}` } });
@@ -45,8 +47,13 @@ export default function AdminDashboard() {
     socket.on('new-attendance', (newRecord) => {
       setAttendances((prev) => [newRecord, ...prev]);
       // Live update stats
-      if (newRecord.status === 'hadir') setTodayStats(s => ({ ...s, hadir: s.hadir + 1 }));
-      else if (newRecord.status === 'telat') setTodayStats(s => ({ ...s, telat: s.telat + 1 }));
+      const role = newRecord.userRole || 'siswa';
+      if (role === 'siswa') {
+        if (newRecord.status === 'hadir') setTodayStats(s => ({ ...s, hadir: s.hadir + 1 }));
+        else if (newRecord.status === 'telat') setTodayStats(s => ({ ...s, telat: s.telat + 1 }));
+      } else if (role === 'guru' || role === 'wali_kelas') {
+        setTodayStats((s) => ({ ...s, guruTotal: s.guruTotal + 1 }));
+      }
     });
 
     return () => socket.disconnect();
@@ -104,7 +111,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {statCards.map((card, i) => (
           <div key={i} className="stat-card bg-white rounded-xl p-5 border border-gray-100 animate-slide-up" style={{ animationDelay: `${i * 0.08}s` }}>
             <div className="flex items-center justify-between mb-3">
@@ -118,6 +125,15 @@ export default function AdminDashboard() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{card.label} Hari Ini</p>
           </div>
         ))}
+        <div className="stat-card bg-white rounded-xl p-5 border border-gray-100 animate-slide-up">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-maroon/10 text-maroon">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5V4H2v16h5m10 0v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5m10 0H7" /></svg>
+            </div>
+            <span className="text-3xl font-black text-maroon">{todayStats.guruTotal}</span>
+          </div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Absensi Guru Hari Ini</p>
+        </div>
       </div>
 
       {/* Info Cards */}
@@ -187,7 +203,7 @@ export default function AdminDashboard() {
               <thead className="bg-gray-50/80 border-b border-gray-100 sticky top-0">
                 <tr>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Waktu</th>
-                  <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama Siswa</th>
+                  <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Nama</th>
                   <th className="px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
@@ -196,7 +212,7 @@ export default function AdminDashboard() {
                   attendances.map((record) => (
                     <tr key={record._id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-5 py-3 text-xs font-medium text-gray-500">{new Date(record.checkIn).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td className="px-5 py-3 font-semibold text-gray-900 text-sm">{record.student?.name}</td>
+                      <td className="px-5 py-3 font-semibold text-gray-900 text-sm">{record.student?.name || record.user?.name}</td>
                       <td className="px-5 py-3">
                         <span className={getStatusBadge(record.status)}>{record.status}</span>
                       </td>

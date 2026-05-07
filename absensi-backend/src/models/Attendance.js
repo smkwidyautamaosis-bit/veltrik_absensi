@@ -5,7 +5,17 @@ const attendanceSchema = new mongoose.Schema(
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
+      required: false,
+    },
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+    },
+    userRole: {
+      type: String,
+      enum: ['siswa', 'guru', 'wali_kelas'],
+      default: 'siswa',
     },
     date: {
       type: String, // Format YYYY-MM-DD untuk mempermudah query
