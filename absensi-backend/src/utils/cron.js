@@ -7,7 +7,7 @@ const { generateAlpa } = require('../controllers/attendanceController');
 // Atau jalankan string cron berikut:
 const initCronJobs = () => {
   cron.schedule('0 15 * * *', async () => {
-    console.log('Menjalankan Auto-Alpa otomatis pada 15:00 WIB (siswa + guru)...');
+    console.log('Menjalankan Auto-Alpa otomatis (hari aktif level + PKL + guru)...');
     try {
       // Kita panggil fungsi controller secara langsung tanpa req/res objects
       // Karena kita mendesain ulang generateAlpa, req/res bisa diabaikan atau disimulasikan

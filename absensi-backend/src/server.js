@@ -25,6 +25,7 @@ const parentRoutes = require('./routes/parentRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const academicYearRoutes = require('./routes/academicYearRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
+const pklRoutes = require('./routes/pklRoutes');
 const initCronJobs = require('./utils/cron');
 const notificationService = require('./utils/notificationService');
 
@@ -92,6 +93,7 @@ app.use('/api/parents', parentRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/academic-years', academicYearRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/pkl', pklRoutes);
 
 app.get('/', (req, res) => {
   res.send('API Sistem Absensi Veltrik Berjalan Lancar');

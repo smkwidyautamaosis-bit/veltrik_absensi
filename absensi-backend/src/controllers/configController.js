@@ -4,7 +4,12 @@ const Config = require('../models/Config');
 const DEFAULT_CONFIG = {
   school_lat: -6.2088,
   school_lng: 106.8456,
-  max_radius: 50
+  max_radius: 50,
+  activeDaysByLevel: {
+    X: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+    XI: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'],
+    XII: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'],
+  },
 };
 
 // @desc    Get All Configurations (Location & Radius)
@@ -18,7 +23,8 @@ exports.getConfig = async (req, res, next) => {
       const defaultConfigs = [
         { key: 'school_lat', value: DEFAULT_CONFIG.school_lat, description: 'Latitude Sekolah (Default)' },
         { key: 'school_lng', value: DEFAULT_CONFIG.school_lng, description: 'Longitude Sekolah (Default)' },
-        { key: 'max_radius', value: DEFAULT_CONFIG.max_radius, description: 'Radius Maksimal (Default)' }
+        { key: 'max_radius', value: DEFAULT_CONFIG.max_radius, description: 'Radius Maksimal (Default)' },
+        { key: 'active_days_by_level', value: DEFAULT_CONFIG.activeDaysByLevel, description: 'Hari aktif absensi per tingkat kelas' },
       ];
       await Config.insertMany(defaultConfigs);
       configs = await Config.find({});
@@ -35,6 +41,9 @@ exports.getConfig = async (req, res, next) => {
       school_lat: configData.school_lat !== undefined ? configData.school_lat : DEFAULT_CONFIG.school_lat,
       school_lng: configData.school_lng !== undefined ? configData.school_lng : DEFAULT_CONFIG.school_lng,
       max_radius: configData.max_radius !== undefined ? configData.max_radius : DEFAULT_CONFIG.max_radius,
+      activeDaysByLevel: configData.active_days_by_level !== undefined
+        ? configData.active_days_by_level
+        : DEFAULT_CONFIG.activeDaysByLevel,
     };
 
     res.status(200).json({
@@ -50,7 +59,7 @@ exports.getConfig = async (req, res, next) => {
 // @route   PUT /api/config
 exports.updateConfig = async (req, res, next) => {
   try {
-    const { school_lat, school_lng, max_radius } = req.body;
+    const { school_lat, school_lng, max_radius, activeDaysByLevel } = req.body;
 
     // Update or Create each config key
     if (school_lat !== undefined) {
@@ -73,6 +82,14 @@ exports.updateConfig = async (req, res, next) => {
       await Config.findOneAndUpdate(
         { key: 'max_radius' },
         { value: parseFloat(max_radius), description: 'Radius Maksimal Absensi (meter)' },
+        { upsert: true, new: true }
+      );
+    }
+
+    if (activeDaysByLevel !== undefined) {
+      await Config.findOneAndUpdate(
+        { key: 'active_days_by_level' },
+        { value: activeDaysByLevel, description: 'Hari aktif absensi per tingkat kelas' },
         { upsert: true, new: true }
       );
     }

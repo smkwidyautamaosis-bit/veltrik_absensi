@@ -5,6 +5,8 @@ const { calculateDistance } = require('../utils/haversine');
 const { sendNotification } = require('../utils/notificationService');
 const User = require('../models/User');
 const Schedule = require('../models/Schedule');
+const Class = require('../models/Class');
+const PKL = require('../models/PKL');
 
 // Default config if not found
 const DEFAULT_LAT = -6.2088;
@@ -30,6 +32,12 @@ const getDayName = (date = new Date()) => {
 const isWeekday = (date = new Date()) => {
   const day = date.getDay();
   return day >= 1 && day <= 5;
+};
+
+const DEFAULT_ACTIVE_DAYS_BY_LEVEL = {
+  X: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+  XI: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'],
+  XII: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'],
 };
 
 // @desc    Proses Check-In Siswa
@@ -280,19 +288,50 @@ exports.generateAlpa = async (req, res, next) => {
   try {
     const today = new Date().toISOString().split('T')[0];
     const todayDate = new Date();
+    const todayDayName = getDayName(todayDate);
 
-    // Ambil semua ID siswa aktif yang sudah masuk (joinDate <= today)
+    const activeDaysConfig = await Config.findOne({ key: 'active_days_by_level' });
+    const activeDaysByLevel = activeDaysConfig?.value || DEFAULT_ACTIVE_DAYS_BY_LEVEL;
+
+    // Ambil semua siswa aktif yang sudah masuk (joinDate <= today)
     const todayObj = new Date(today);
     todayObj.setHours(23, 59, 59, 999); // Pastikan sampai akhir hari
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
 
-    const students = await User.find({ 
+    const students = await User.find({
       role: 'siswa',
       $or: [
         { joinDate: { $lte: todayObj } },
         { joinDate: { $exists: false } }
       ]
-    }).select('_id');
-    const studentIds = students.map(s => s._id.toString());
+    }).select('_id classId');
+
+    const classIds = [...new Set(students.map((s) => s.classId?.toString()).filter(Boolean))];
+    const classes = await Class.find({ _id: { $in: classIds } }).select('_id level');
+    const classLevelMap = new Map(classes.map((c) => [c._id.toString(), c.level]));
+
+    // PKL aktif hanya untuk kelas XII, kelas PKL aktif di-skip dari auto-alpa
+    const activePklPeriods = await PKL.find({
+      isActive: true,
+      startDate: { $lte: todayObj },
+      endDate: { $gte: todayStart },
+    }).select('classId');
+    const activePklClassIds = new Set(activePklPeriods.map((p) => p.classId.toString()));
+
+    const eligibleStudents = students.filter((student) => {
+      const classId = student.classId?.toString();
+      if (!classId) return false;
+
+      const level = classLevelMap.get(classId);
+      const allowedDays = activeDaysByLevel?.[level] || DEFAULT_ACTIVE_DAYS_BY_LEVEL[level] || [];
+      if (!allowedDays.includes(todayDayName)) return false;
+
+      if (level === 'XII' && activePklClassIds.has(classId)) return false;
+
+      return true;
+    });
+    const studentIds = eligibleStudents.map((s) => s._id.toString());
 
     // Guru produktif auto-alpa global setiap Senin-Jumat
     let produktifTeacherIds = [];
@@ -305,7 +344,6 @@ exports.generateAlpa = async (req, res, next) => {
     }
 
     // Guru tidak tetap auto-alpa hanya jika punya jadwal mengajar hari ini
-    const todayDayName = getDayName(todayDate);
     const scheduledTeacherIds = await Schedule.distinct('teacher', { dayOfWeek: todayDayName });
     const scheduledTeacherIdsAsString = scheduledTeacherIds.map((id) => id.toString());
     const tidakTetapTeachers = await User.find({
